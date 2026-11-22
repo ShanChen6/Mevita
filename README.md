@@ -64,6 +64,7 @@ pnpm dev
 - [Lộ trình triển khai](docs/ROADMAP.md)
 - [Thiết kế CSDL & ERD](docs/database.md)
 - [Danh mục hành chính 2 cấp](docs/administrative-units.md)
+- [Cấu trúc giao diện 3 phân hệ](docs/ui-structure.md)
 
 ## Nhánh làm việc
 

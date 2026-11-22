@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Ambulance, CalendarCheck, FileHeart } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -33,9 +34,14 @@ export default function HomePage() {
           Hệ thống Quản lý Hồ sơ Y tế Điện tử, Đặt lịch khám &amp; Chuyển tuyến Thời gian thực từ
           Trạm y tế xã lên Bệnh viện tỉnh/liên tỉnh.
         </p>
-        <Button size="lg" disabled>
-          Đăng nhập (sắp ra mắt)
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button size="lg" asChild>
+            <Link href="/login">Đăng nhập</Link>
+          </Button>
+          <Button size="lg" variant="outline" asChild>
+            <Link href="/province">Xem trung tâm điều phối</Link>
+          </Button>
+        </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
