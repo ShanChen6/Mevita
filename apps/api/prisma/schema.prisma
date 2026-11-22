@@ -69,9 +69,640 @@ model Commune {
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
 
-  province Province @relation(fields: [provinceCode], references: [code], onUpdate: Cascade, onDelete: Restrict)
+  province   Province         @relation(fields: [provinceCode], references: [code], onUpdate: Cascade, onDelete: Restrict)
+  facilities HealthFacility[]
+  patients   Patient[]
 
   @@index([provinceCode])
   @@index([codeName])
   @@map("communes")
+}
+
+// ─────────────────────────────────────────────────────────────
+// NGƯỜI DÙNG & PHÂN QUYỀN
+// ─────────────────────────────────────────────────────────────
+
+/// Vai trò hệ thống (RBAC). Mỗi tài khoản có đúng một vai trò.
+enum UserRole {
+  /// Bệnh nhân — tự đặt lịch, xem hồ sơ của mình
+  PATIENT
+  /// Bác sĩ / Nhân viên y tế tuyến Xã
+  COMMUNE_STAFF
+  /// Bác sĩ / Điều phối viên tuyến Tỉnh, Liên tỉnh
+  PROVINCE_STAFF
+  /// Quản trị viên hệ thống / Sở Y tế
+  ADMIN
+}
+
+/// Chức danh chuyên môn của nhân viên y tế
+enum StaffPosition {
+  DOCTOR
+  NURSE
+  MIDWIFE
+  /// Y sĩ
+  PHYSICIAN_ASSISTANT
+  /// Điều phối viên tiếp nhận chuyển tuyến
+  COORDINATOR
+  /// Bộ phận tiếp đón
+  RECEPTIONIST
+}
+
+/// Tài khoản đăng nhập
+model User {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  /// Tên đăng nhập: email hoặc số điện thoại (ít nhất một trong hai)
+  email        String?   @unique @db.VarChar(255)
+  phone        String?   @unique @db.VarChar(15)
+  passwordHash String    @map("password_hash")
+  fullName     String    @map("full_name") @db.VarChar(150)
+  role         UserRole
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  /// Hồ sơ nhân viên y tế (COMMUNE_STAFF, PROVINCE_STAFF)
+  staffProfile  StaffProfile?
+  /// Hồ sơ bệnh nhân gắn với tài khoản (PATIENT)
+  patient       Patient?
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+
+  examinedRecords     MedicalRecord[]    @relation("RecordDoctor")
+  doctorAppointments  Appointment[]      @relation("AppointmentDoctor")
+  handledAppointments Appointment[]      @relation("AppointmentHandledBy")
+  uploadedImages      ClinicalImage[]
+  sentReferrals       Referral[]         @relation("ReferralSender")
+  acceptedReferrals   Referral[]         @relation("ReferralAcceptor")
+  receivedReferrals   Referral[]         @relation("ReferralReceiver")
+  escortedReferrals   Referral[]         @relation("ReferralEscort")
+  referralVitalLogs   ReferralVitalLog[]
+
+  @@index([role])
+  @@map("users")
+}
+
+/// Thông tin công tác của nhân viên y tế — xác định cơ sở mà nhân viên được phép truy cập dữ liệu
+model StaffProfile {
+  userId        String        @id @map("user_id") @db.Uuid
+  facilityId    String        @map("facility_id") @db.Uuid
+  position      StaffPosition
+  specialtyId   String?       @map("specialty_id") @db.Uuid
+  /// Số chứng chỉ hành nghề / giấy phép hành nghề
+  licenseNumber String?       @unique @map("license_number") @db.VarChar(50)
+  /// Học hàm, học vị hiển thị (vd: "BSCKI", "ThS.BS")
+  academicTitle String?       @map("academic_title") @db.VarChar(50)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  facility  HealthFacility @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  specialty Specialty?     @relation(fields: [specialtyId], references: [id], onDelete: SetNull)
+
+  @@index([facilityId])
+  @@map("staff_profiles")
+}
+
+/// Refresh token (JWT) — lưu dạng băm để có thể thu hồi
+model RefreshToken {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  userAgent String?   @map("user_agent") @db.VarChar(500)
+  ipAddress String?   @map("ip_address") @db.VarChar(45)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+/// Nhật ký truy cập / thao tác trên dữ liệu nhạy cảm (phục vụ kiểm tra bảo mật)
+model AuditLog {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  /// Hành động: VIEW, CREATE, UPDATE, DELETE, LOGIN...
+  action     String   @db.VarChar(50)
+  /// Loại đối tượng: MedicalRecord, Patient, Referral...
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   String?  @map("entity_id") @db.VarChar(50)
+  metadata   Json?
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// CƠ SỞ Y TẾ & CHUYÊN KHOA
+// ─────────────────────────────────────────────────────────────
+
+/// Loại hình cơ sở khám chữa bệnh
+enum FacilityType {
+  /// Trạm y tế xã / phường / đặc khu
+  COMMUNE_HEALTH_STATION
+  /// Bệnh viện đa khoa tỉnh
+  PROVINCIAL_GENERAL_HOSPITAL
+  /// Bệnh viện chuyên khoa tỉnh
+  PROVINCIAL_SPECIALTY_HOSPITAL
+  /// Bệnh viện khu vực (liên tỉnh)
+  REGIONAL_HOSPITAL
+  /// Bệnh viện tuyến Trung ương
+  CENTRAL_HOSPITAL
+}
+
+/// Cấp chuyên môn kỹ thuật theo Luật Khám bệnh, chữa bệnh 2023
+enum FacilityLevel {
+  /// Cấp khám bệnh, chữa bệnh ban đầu
+  PRIMARY
+  /// Cấp khám bệnh, chữa bệnh cơ bản
+  BASIC
+  /// Cấp khám bệnh, chữa bệnh chuyên sâu
+  SPECIALIZED
+}
+
+/// Cơ sở y tế: Trạm y tế xã, Bệnh viện tỉnh, Bệnh viện Trung ương / liên tỉnh
+model HealthFacility {
+  id                  String        @id @default(uuid(7)) @db.Uuid
+  /// Mã cơ sở khám chữa bệnh (mã BHYT)
+  code                String        @unique @db.VarChar(20)
+  name                String        @db.VarChar(255)
+  type                FacilityType
+  level               FacilityLevel
+  /// Địa chỉ hành chính — tỉnh được suy ra từ xã
+  communeCode         String        @map("commune_code") @db.VarChar(5)
+  addressDetail       String?       @map("address_detail") @db.VarChar(255)
+  phone               String?       @db.VarChar(20)
+  /// Đường dây nóng cấp cứu / tiếp nhận chuyển tuyến
+  emergencyPhone      String?       @map("emergency_phone") @db.VarChar(20)
+  latitude            Float?
+  longitude           Float?
+  /// Có tiếp nhận chuyển tuyến cấp cứu hay không
+  acceptsReferrals    Boolean       @default(false) @map("accepts_referrals")
+  /// Thời lượng mỗi khung giờ khám (phút) dùng cho đặt lịch
+  slotDurationMinutes Int           @default(15) @map("slot_duration_minutes")
+  isActive            Boolean       @default(true) @map("is_active")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+
+  commune           Commune             @relation(fields: [communeCode], references: [code], onUpdate: Cascade, onDelete: Restrict)
+  specialties       FacilitySpecialty[]
+  staff             StaffProfile[]
+  appointments      Appointment[]
+  medicalRecords    MedicalRecord[]
+  outgoingReferrals Referral[]          @relation("ReferralFrom")
+  incomingReferrals Referral[]          @relation("ReferralTo")
+
+  @@index([communeCode])
+  @@index([type])
+  @@map("health_facilities")
+}
+
+/// Danh mục chuyên khoa
+model Specialty {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  code        String   @unique @db.VarChar(30)
+  name        String   @unique @db.VarChar(100)
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  facilities   FacilitySpecialty[]
+  staff        StaffProfile[]
+  appointments Appointment[]
+
+  @@map("specialties")
+}
+
+/// Chuyên khoa mà cơ sở y tế cung cấp
+model FacilitySpecialty {
+  facilityId  String  @map("facility_id") @db.Uuid
+  specialtyId String  @map("specialty_id") @db.Uuid
+  /// Có nhận đặt lịch khám trực tuyến cho chuyên khoa này không
+  isBookable  Boolean @default(true) @map("is_bookable")
+
+  facility  HealthFacility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  specialty Specialty      @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@id([facilityId, specialtyId])
+  @@index([specialtyId])
+  @@map("facility_specialties")
+}
+
+// ─────────────────────────────────────────────────────────────
+// BỆNH NHÂN
+// ─────────────────────────────────────────────────────────────
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum BloodType {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+  UNKNOWN
+}
+
+/// Hồ sơ định danh bệnh nhân. Có thể tồn tại không kèm tài khoản
+/// (bệnh nhân được tiếp nhận trực tiếp tại trạm y tế hoặc cấp cứu).
+model Patient {
+  id                    String    @id @default(uuid(7)) @db.Uuid
+  /// Tài khoản đăng nhập (nếu bệnh nhân tự đăng ký)
+  userId                String?   @unique @map("user_id") @db.Uuid
+  fullName              String    @map("full_name") @db.VarChar(150)
+  dateOfBirth           DateTime  @map("date_of_birth") @db.Date
+  gender                Gender
+  /// Số Căn cước công dân (12 chữ số)
+  nationalId            String?   @unique @map("national_id") @db.VarChar(12)
+  /// Mã thẻ Bảo hiểm y tế
+  healthInsuranceNumber String?   @unique @map("health_insurance_number") @db.VarChar(15)
+  healthInsuranceExpiry DateTime? @map("health_insurance_expiry") @db.Date
+  phone                 String?   @db.VarChar(15)
+  communeCode           String?   @map("commune_code") @db.VarChar(5)
+  addressDetail         String?   @map("address_detail") @db.VarChar(255)
+  bloodType             BloodType @default(UNKNOWN) @map("blood_type")
+  /// Tiền sử dị ứng (thuốc, thức ăn...)
+  allergies             String?
+  /// Bệnh mạn tính / tiền sử bệnh
+  chronicConditions     String?   @map("chronic_conditions")
+  emergencyContactName  String?   @map("emergency_contact_name") @db.VarChar(150)
+  emergencyContactPhone String?   @map("emergency_contact_phone") @db.VarChar(15)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  commune        Commune?        @relation(fields: [communeCode], references: [code], onUpdate: Cascade, onDelete: Restrict)
+  appointments   Appointment[]
+  medicalRecords MedicalRecord[]
+  referrals      Referral[]
+
+  @@index([fullName])
+  @@index([phone])
+  @@index([communeCode])
+  @@map("patients")
+}
+
+// ─────────────────────────────────────────────────────────────
+// LỊCH HẸN KHÁM
+// ─────────────────────────────────────────────────────────────
+
+enum AppointmentStatus {
+  /// Bệnh nhân vừa đặt, chờ cơ sở duyệt
+  PENDING
+  /// Cơ sở đã xác nhận
+  CONFIRMED
+  /// Bệnh nhân đã đến, đã chuyển thành phiếu khám
+  CHECKED_IN
+  /// Đã khám xong
+  COMPLETED
+  CANCELLED
+  /// Bệnh nhân không đến
+  NO_SHOW
+}
+
+/// Lịch hẹn khám của bệnh nhân
+model Appointment {
+  id                 String            @id @default(uuid(7)) @db.Uuid
+  /// Mã đặt lịch ngắn gọn để tra cứu tại quầy tiếp đón (vd: "LH8K2Q7M")
+  code               String            @unique @db.VarChar(20)
+  patientId          String            @map("patient_id") @db.Uuid
+  facilityId         String            @map("facility_id") @db.Uuid
+  specialtyId        String?           @map("specialty_id") @db.Uuid
+  /// Bác sĩ được chọn (không bắt buộc)
+  doctorId           String?           @map("doctor_id") @db.Uuid
+  startAt            DateTime          @map("start_at")
+  endAt              DateTime          @map("end_at")
+  /// Lý do khám
+  reason             String
+  /// Triệu chứng ban đầu do bệnh nhân khai
+  initialSymptoms    String?           @map("initial_symptoms")
+  status             AppointmentStatus @default(PENDING)
+  cancellationReason String?           @map("cancellation_reason")
+  /// Nhân viên tiếp đón đã duyệt / huỷ / check-in
+  handledById        String?           @map("handled_by_id") @db.Uuid
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+
+  patient       Patient        @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  facility      HealthFacility @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  specialty     Specialty?     @relation(fields: [specialtyId], references: [id], onDelete: SetNull)
+  doctor        User?          @relation("AppointmentDoctor", fields: [doctorId], references: [id], onDelete: SetNull)
+  handledBy     User?          @relation("AppointmentHandledBy", fields: [handledById], references: [id], onDelete: SetNull)
+  medicalRecord MedicalRecord?
+
+  @@index([patientId, startAt])
+  @@index([facilityId, startAt])
+  @@index([doctorId, startAt])
+  @@index([status])
+  @@map("appointments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// HỒ SƠ KHÁM BỆNH
+// ─────────────────────────────────────────────────────────────
+
+enum EncounterType {
+  /// Khám ngoại trú
+  OUTPATIENT
+  /// Cấp cứu
+  EMERGENCY
+  /// Điều trị nội trú
+  INPATIENT
+}
+
+enum MedicalRecordStatus {
+  /// Đang khám, còn chỉnh sửa
+  DRAFT
+  /// Bác sĩ đã ký xác nhận — không được sửa
+  FINALIZED
+}
+
+/// Hồ sơ một lần khám bệnh (phiếu khám / bệnh án)
+model MedicalRecord {
+  id                  String        @id @default(uuid(7)) @db.Uuid
+  code                String        @unique @db.VarChar(20)
+  patientId           String        @map("patient_id") @db.Uuid
+  /// Bác sĩ trực tiếp khám (tài khoản đang đăng nhập khi tạo)
+  doctorId            String        @map("doctor_id") @db.Uuid
+  facilityId          String        @map("facility_id") @db.Uuid
+  /// Lịch hẹn được chuyển thành phiếu khám này (nếu có)
+  appointmentId       String?       @unique @map("appointment_id") @db.Uuid
+  /// Phiếu chuyển tuyến mà hồ sơ này tiếp nối điều trị (tuyến trên)
+  sourceReferralId    String?       @unique @map("source_referral_id") @db.Uuid
+  encounterType       EncounterType @default(OUTPATIENT) @map("encounter_type")
+  visitAt             DateTime      @default(now()) @map("visit_at")
+  /// Lý do đến khám
+  chiefComplaint      String        @map("chief_complaint")
+  /// Triệu chứng / bệnh sử
+  symptoms            String?
+  /// Khám lâm sàng
+  physicalExamination String?       @map("physical_examination")
+
+  // Chỉ số sinh tồn tại thời điểm khám
+  pulse           Int?
+  temperature     Float?
+  systolicBp      Int?   @map("systolic_bp")
+  diastolicBp     Int?   @map("diastolic_bp")
+  respiratoryRate Int?   @map("respiratory_rate")
+  spo2            Int?
+  weightKg        Float? @map("weight_kg")
+  heightCm        Float? @map("height_cm")
+
+  /// Kết luận / chẩn đoán chi tiết (diễn giải)
+  diagnosisNote String?             @map("diagnosis_note")
+  /// Hướng điều trị / lời dặn
+  treatmentPlan String?             @map("treatment_plan")
+  followUpDate  DateTime?           @map("follow_up_date") @db.Date
+  status        MedicalRecordStatus @default(DRAFT)
+  /// Thời điểm bác sĩ ký xác nhận hoàn tất khám
+  signedAt      DateTime?           @map("signed_at")
+  /// Băm SHA-256 nội dung hồ sơ tại thời điểm ký (phát hiện chỉnh sửa trái phép)
+  signatureHash String?             @map("signature_hash") @db.VarChar(64)
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  patient           Patient            @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  doctor            User               @relation("RecordDoctor", fields: [doctorId], references: [id], onDelete: Restrict)
+  facility          HealthFacility     @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  appointment       Appointment?       @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  sourceReferral    Referral?          @relation("ReferralContinuation", fields: [sourceReferralId], references: [id], onDelete: SetNull)
+  diagnoses         Diagnosis[]
+  prescriptionItems PrescriptionItem[]
+  clinicalImages    ClinicalImage[]
+  /// Các phiếu chuyển tuyến được lập từ hồ sơ này
+  referrals         Referral[]         @relation("ReferralSourceRecord")
+
+  @@index([patientId, visitAt])
+  @@index([facilityId, visitAt])
+  @@index([doctorId, visitAt])
+  @@map("medical_records")
+}
+
+/// Danh mục mã bệnh quốc tế ICD-10 (nạp ở Task 3.2)
+model Icd10Code {
+  /// Mã ICD-10, vd: "S06.5"
+  code     String  @id @db.VarChar(10)
+  nameVi   String  @map("name_vi")
+  nameEn   String? @map("name_en")
+  /// Chương ICD-10 (I–XXII)
+  chapter  String? @db.VarChar(10)
+  isActive Boolean @default(true) @map("is_active")
+
+  diagnoses Diagnosis[]
+
+  @@map("icd10_codes")
+}
+
+/// Chẩn đoán của một lần khám: 1 bệnh chính + các bệnh kèm theo
+model Diagnosis {
+  id              String  @id @default(uuid(7)) @db.Uuid
+  medicalRecordId String  @map("medical_record_id") @db.Uuid
+  icdCode         String  @map("icd_code") @db.VarChar(10)
+  /// true = bệnh chính, false = bệnh kèm theo
+  isPrimary       Boolean @default(false) @map("is_primary")
+  note            String?
+
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+  icd10         Icd10Code     @relation(fields: [icdCode], references: [code], onDelete: Restrict)
+
+  @@unique([medicalRecordId, icdCode])
+  @@index([icdCode])
+  @@map("diagnoses")
+}
+
+/// Một dòng thuốc trong đơn thuốc
+model PrescriptionItem {
+  id               String  @id @default(uuid(7)) @db.Uuid
+  medicalRecordId  String  @map("medical_record_id") @db.Uuid
+  /// Tên thuốc (biệt dược)
+  drugName         String  @map("drug_name") @db.VarChar(255)
+  /// Hoạt chất
+  activeIngredient String? @map("active_ingredient") @db.VarChar(255)
+  /// Hàm lượng, vd: "500mg"
+  strength         String? @db.VarChar(50)
+  quantity         Float
+  /// Đơn vị: viên, ống, gói...
+  unit             String  @db.VarChar(30)
+  /// Cách dùng, vd: "Uống 1 viên x 2 lần/ngày sau ăn"
+  instructions     String
+  durationDays     Int?    @map("duration_days")
+  sortOrder        Int     @default(0) @map("sort_order")
+
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+
+  @@index([medicalRecordId])
+  @@map("prescription_items")
+}
+
+enum ClinicalImageType {
+  LAB_RESULT
+  XRAY
+  ULTRASOUND
+  CT
+  MRI
+  ECG
+  OTHER
+}
+
+/// Ảnh cận lâm sàng lưu trên Cloudinary
+model ClinicalImage {
+  id                 String            @id @default(uuid(7)) @db.Uuid
+  medicalRecordId    String            @map("medical_record_id") @db.Uuid
+  type               ClinicalImageType
+  cloudinaryPublicId String            @unique @map("cloudinary_public_id")
+  secureUrl          String            @map("secure_url")
+  format             String?           @db.VarChar(10)
+  width              Int?
+  height             Int?
+  bytes              Int?
+  description        String?
+  takenAt            DateTime?         @map("taken_at")
+  uploadedById       String            @map("uploaded_by_id") @db.Uuid
+  createdAt          DateTime          @default(now()) @map("created_at")
+
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+  uploadedBy    User          @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([medicalRecordId])
+  @@map("clinical_images")
+}
+
+// ─────────────────────────────────────────────────────────────
+// CHUYỂN TUYẾN KHẨN CẤP
+// ─────────────────────────────────────────────────────────────
+
+enum ReferralPriority {
+  /// Cấp cứu tối khẩn
+  CRITICAL
+  /// Khẩn
+  URGENT
+  /// Thường
+  ROUTINE
+}
+
+enum ReferralStatus {
+  /// Đã gửi, chờ tuyến trên xác nhận
+  PENDING
+  /// Tuyến trên đã xác nhận tiếp nhận & sẵn sàng ê-kíp
+  ACCEPTED
+  /// Tuyến trên từ chối (quá tải, không đủ chuyên môn...) — cần chọn nơi khác
+  REJECTED
+  /// Xe đã tới, bệnh nhân đã được tiếp nhận
+  ARRIVED
+  CANCELLED
+}
+
+/// Phiếu chuyển tuyến
+model Referral {
+  id                 String           @id @default(uuid(7)) @db.Uuid
+  code               String           @unique @db.VarChar(20)
+  patientId          String           @map("patient_id") @db.Uuid
+  /// Hồ sơ khám tại tuyến dưới làm căn cứ chuyển tuyến
+  sourceRecordId     String           @map("source_record_id") @db.Uuid
+  fromFacilityId     String           @map("from_facility_id") @db.Uuid
+  toFacilityId       String           @map("to_facility_id") @db.Uuid
+  /// Bác sĩ tuyến dưới lập phiếu
+  referredById       String           @map("referred_by_id") @db.Uuid
+  priority           ReferralPriority
+  status             ReferralStatus   @default(PENDING)
+  /// Lý do chuyển tuyến
+  reason             String
+  /// Tóm tắt bệnh án
+  clinicalSummary    String           @map("clinical_summary")
+  /// Xử trí sơ cứu ban đầu tại tuyến dưới
+  initialTreatment   String?          @map("initial_treatment")
+  /// Nhân viên y tế đi kèm trên xe (người cập nhật diễn biến)
+  escortId           String?          @map("escort_id") @db.Uuid
+  /// Phương tiện, vd: "Xe cứu thương 24A-123.45"
+  vehicleInfo        String?          @map("vehicle_info") @db.VarChar(100)
+  departedAt         DateTime?        @map("departed_at")
+  estimatedArrivalAt DateTime?        @map("estimated_arrival_at")
+
+  /// Phản hồi của tuyến trên
+  acceptedById    String?   @map("accepted_by_id") @db.Uuid
+  acceptedAt      DateTime? @map("accepted_at")
+  /// Ghi chú chuẩn bị, vd: "Đã chuẩn bị phòng mổ số 2, dự trù 2 đơn vị máu O"
+  preparationNote String?   @map("preparation_note")
+  rejectionReason String?   @map("rejection_reason")
+
+  /// Tiếp nhận thực tế khi xe tới
+  receivedById       String?   @map("received_by_id") @db.Uuid
+  arrivedAt          DateTime? @map("arrived_at")
+  cancelledAt        DateTime? @map("cancelled_at")
+  cancellationReason String?   @map("cancellation_reason")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  patient            Patient            @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  sourceRecord       MedicalRecord      @relation("ReferralSourceRecord", fields: [sourceRecordId], references: [id], onDelete: Restrict)
+  fromFacility       HealthFacility     @relation("ReferralFrom", fields: [fromFacilityId], references: [id], onDelete: Restrict)
+  toFacility         HealthFacility     @relation("ReferralTo", fields: [toFacilityId], references: [id], onDelete: Restrict)
+  referredBy         User               @relation("ReferralSender", fields: [referredById], references: [id], onDelete: Restrict)
+  escort             User?              @relation("ReferralEscort", fields: [escortId], references: [id], onDelete: SetNull)
+  acceptedBy         User?              @relation("ReferralAcceptor", fields: [acceptedById], references: [id], onDelete: SetNull)
+  receivedBy         User?              @relation("ReferralReceiver", fields: [receivedById], references: [id], onDelete: SetNull)
+  vitalLogs          ReferralVitalLog[]
+  /// Hồ sơ điều trị tiếp nối tại tuyến trên (Task 5.1)
+  continuationRecord MedicalRecord?     @relation("ReferralContinuation")
+
+  @@index([toFacilityId, status])
+  @@index([fromFacilityId, createdAt])
+  @@index([patientId])
+  @@map("referrals")
+}
+
+/// Mức độ tri giác theo thang AVPU
+enum ConsciousnessLevel {
+  /// Tỉnh táo
+  ALERT
+  /// Đáp ứng với lời nói
+  VOICE
+  /// Đáp ứng với kích thích đau
+  PAIN
+  /// Không đáp ứng
+  UNRESPONSIVE
+}
+
+/// Nhật ký chỉ số sinh tồn cập nhật liên tục trên xe chuyển viện
+model ReferralVitalLog {
+  id              String              @id @default(uuid(7)) @db.Uuid
+  referralId      String              @map("referral_id") @db.Uuid
+  /// UUID do thiết bị sinh ra — chống ghi trùng khi đồng bộ lại sau lúc mất sóng (offline-first)
+  clientId        String              @unique @map("client_id") @db.Uuid
+  /// Thời điểm đo thực tế trên xe (giờ của thiết bị)
+  recordedAt      DateTime            @map("recorded_at")
+  /// Thời điểm máy chủ nhận được (chênh lệch lớn = dữ liệu đồng bộ trễ)
+  receivedAt      DateTime            @default(now()) @map("received_at")
+  recordedById    String              @map("recorded_by_id") @db.Uuid
+  pulse           Int?
+  systolicBp      Int?                @map("systolic_bp")
+  diastolicBp     Int?                @map("diastolic_bp")
+  spo2            Int?
+  respiratoryRate Int?                @map("respiratory_rate")
+  temperature     Float?
+  consciousness   ConsciousnessLevel?
+  /// Điểm Glasgow (3–15)
+  gcs             Int?
+  note            String?
+
+  referral   Referral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  recordedBy User     @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([referralId, recordedAt])
+  @@map("referral_vital_logs")
 }
