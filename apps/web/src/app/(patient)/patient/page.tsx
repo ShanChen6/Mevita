@@ -6,13 +6,12 @@ import { doctorName } from '@/components/patient/record-card';
 import { AppointmentStatusBadge } from '@/components/shared/status-badge';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
-import { WireframeNote } from '@/components/shared/wireframe-note';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getMyAppointments } from '@/lib/data/appointments';
 import { getMyProfile, getMyRecords } from '@/lib/data/patient';
 import type { PatientProfile } from '@/lib/data/types';
 import { formatDate, formatTime } from '@/lib/format';
-import { appointments } from '@/lib/mock-data';
 
 /** Các trường quan trọng còn thiếu trong hồ sơ — nhắc bệnh nhân bổ sung. */
 function missingFields(p: PatientProfile) {
@@ -123,9 +122,9 @@ async function Overview() {
   );
 }
 
-/** Wireframe — lịch hẹn thật ở Task 2.3. */
-function UpcomingAppointments() {
-  const upcoming = appointments.filter((a) => a.patientId === 'pt-1' && a.status !== 'COMPLETED');
+/** Lịch hẹn sắp tới (tối đa 3). */
+async function UpcomingAppointments() {
+  const upcoming = (await getMyAppointments('upcoming')).slice(0, 3);
   return (
     <Card>
       <CardHeader>
@@ -137,20 +136,26 @@ function UpcomingAppointments() {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
-        <WireframeNote task="2.3" />
+        {upcoming.length === 0 && (
+          <p className="text-muted-foreground text-sm">Chưa có lịch hẹn nào sắp tới.</p>
+        )}
         {upcoming.map((a) => (
           <div key={a.id} className="flex items-start justify-between gap-3 rounded-lg border p-3">
             <div className="flex flex-col gap-0.5">
-              <p className="font-medium">
+              <p className="font-medium tabular-nums">
                 {formatTime(a.startAt)} · {formatDate(a.startAt)}
               </p>
               <p className="text-muted-foreground text-sm">
-                {a.facility.name} — {a.specialty}
+                {a.facility.name} — {a.specialty?.name}
               </p>
+              <p className="text-muted-foreground font-mono text-xs">Mã: {a.code}</p>
             </div>
             <AppointmentStatusBadge status={a.status} />
           </div>
         ))}
+        <Button variant="outline" size="sm" className="self-start" asChild>
+          <Link href="/patient/appointments">Xem tất cả lịch hẹn</Link>
+        </Button>
       </CardContent>
     </Card>
   );

@@ -2,12 +2,12 @@
 
 ## Màn hình
 
-| Đường dẫn          | Nội dung                                                                                  | Dữ liệu        |
-| ------------------ | ----------------------------------------------------------------------------------------- | -------------- |
-| `/patient`         | Lời chào, nhắc bổ sung hồ sơ còn thiếu, dị ứng, bệnh mạn tính, lần khám gần nhất          | Thật           |
-| `/patient/records` | Lịch sử khám dạng dòng thời gian, tải thêm theo trang                                     | Thật           |
-| `/patient/profile` | Hồ sơ sức khoẻ: CCCD, BHYT, địa chỉ 2 cấp (Tỉnh → Xã), nhóm máu, dị ứng, liên hệ khẩn cấp | Thật           |
-| Lịch hẹn           | Thẻ "Lịch hẹn sắp tới", `/patient/appointments`, `/patient/appointments/new`              | Mẫu — Task 2.3 |
+| Đường dẫn          | Nội dung                                                                                                   | Dữ liệu |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- | ------- |
+| `/patient`         | Lời chào, nhắc bổ sung hồ sơ còn thiếu, dị ứng, bệnh mạn tính, lần khám gần nhất                           | Thật    |
+| `/patient/records` | Lịch sử khám dạng dòng thời gian, tải thêm theo trang                                                      | Thật    |
+| `/patient/profile` | Hồ sơ sức khoẻ: CCCD, BHYT, địa chỉ 2 cấp (Tỉnh → Xã), nhóm máu, dị ứng, liên hệ khẩn cấp                  | Thật    |
+| Lịch hẹn           | Thẻ "Lịch hẹn sắp tới", `/patient/appointments`, `/patient/appointments/new` ([chi tiết](appointments.md)) | Thật    |
 
 Mỗi lần khám hiển thị: thời gian, **bác sĩ khám** (học hàm/học vị), **chuyên khoa**, **cơ sở y tế**, chẩn đoán ICD-10 (bệnh chính + kèm theo), kết luận, **đơn thuốc**, chỉ số sinh tồn, lời dặn/ngày tái khám, ảnh cận lâm sàng (ảnh thu nhỏ, bấm để phóng to) và dấu xác nhận chữ ký của bác sĩ.
 

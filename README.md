@@ -80,6 +80,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 - [Cấu trúc giao diện 3 phân hệ](docs/ui-structure.md)
 - [Xác thực & phân quyền](docs/auth.md)
 - [Cổng bệnh nhân](docs/patient-portal.md)
+- [Đặt lịch khám](docs/appointments.md)
 
 ## Nhánh làm việc
 

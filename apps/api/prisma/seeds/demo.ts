@@ -13,6 +13,12 @@ import type {
   UserRole,
 } from '../../src/generated/prisma/client.js';
 
+/** Giờ làm việc mặc định: T2–T6 07:30–11:30 & 13:30–16:30, T7 07:30–11:30 */
+const DEFAULT_OPENING_HOURS = [1, 2, 3, 4, 5, 6].flatMap((dayOfWeek) => [
+  { dayOfWeek, startMinute: 7 * 60 + 30, endMinute: 11 * 60 + 30 },
+  ...(dayOfWeek < 6 ? [{ dayOfWeek, startMinute: 13 * 60 + 30, endMinute: 16 * 60 + 30 }] : []),
+]);
+
 const facilities: {
   code: string;
   name: string;
@@ -140,6 +146,11 @@ export async function seedDemo(prisma: PrismaClient) {
       },
     });
     facilityIds.set(f.code, facility.id);
+    if ((await prisma.facilityOpeningHours.count({ where: { facilityId: facility.id } })) === 0) {
+      await prisma.facilityOpeningHours.createMany({
+        data: DEFAULT_OPENING_HOURS.map((h) => ({ ...h, facilityId: facility.id })),
+      });
+    }
     await prisma.facilitySpecialty.createMany({
       data: specialties.map((code) => ({
         facilityId: facility.id,

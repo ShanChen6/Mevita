@@ -11,6 +11,7 @@ export interface AuditEntry {
     | 'REGISTER'
     | 'TOKEN_REUSE'
     | 'VIEW'
+    | 'CREATE'
     | 'UPDATE'
     | 'ACCESS_DENIED';
   entityType: string;

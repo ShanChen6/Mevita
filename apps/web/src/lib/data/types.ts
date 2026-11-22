@@ -89,3 +89,78 @@ export interface Page<T> {
   items: T[];
   nextCursor: string | null;
 }
+
+export type AppointmentStatusValue =
+  'PENDING' | 'CONFIRMED' | 'CHECKED_IN' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+
+export interface FacilitySummary {
+  id: string;
+  name: string;
+  type: FacilityType;
+  addressDetail: string | null;
+  phone: string | null;
+  commune: { code: string; fullName: string; province: { code: string; fullName: string } };
+}
+
+export interface FacilityDetail extends FacilitySummary {
+  slotDurationMinutes: number;
+  specialties: { id: string; code: string; name: string }[];
+  doctors: {
+    id: string;
+    fullName: string;
+    academicTitle: string | null;
+    specialtyId: string | null;
+  }[];
+  openingHours: { dayOfWeek: number; startMinute: number; endMinute: number }[];
+}
+
+export interface TimeSlot {
+  startAt: string;
+  endAt: string;
+  remaining: number;
+  available: boolean;
+}
+
+export interface Appointment {
+  id: string;
+  code: string;
+  startAt: string;
+  endAt: string;
+  status: AppointmentStatusValue;
+  reason: string;
+  initialSymptoms: string | null;
+  cancellationReason: string | null;
+  cancelledByPatient: boolean | null;
+  confirmedAt: string | null;
+  checkedInAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  facility: {
+    id: string;
+    name: string;
+    type: FacilityType;
+    addressDetail: string | null;
+    phone: string | null;
+    commune: { fullName: string; province: { fullName: string } };
+  };
+  specialty: { id: string; code: string; name: string } | null;
+  doctor: {
+    id: string;
+    fullName: string;
+    staffProfile: { academicTitle: string | null } | null;
+  } | null;
+  medicalRecord: { id: string; code: string; status: 'DRAFT' | 'FINALIZED' } | null;
+}
+
+export interface StaffAppointment extends Appointment {
+  patient: {
+    id: string;
+    fullName: string;
+    dateOfBirth: string;
+    gender: Gender;
+    phone: string | null;
+    nationalId: string | null;
+    healthInsuranceNumber: string | null;
+    allergies: string | null;
+  };
+}

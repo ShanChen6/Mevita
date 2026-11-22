@@ -254,17 +254,34 @@ model HealthFacility {
   createdAt           DateTime      @default(now()) @map("created_at")
   updatedAt           DateTime      @updatedAt @map("updated_at")
 
-  commune           Commune             @relation(fields: [communeCode], references: [code], onUpdate: Cascade, onDelete: Restrict)
+  commune           Commune                @relation(fields: [communeCode], references: [code], onUpdate: Cascade, onDelete: Restrict)
   specialties       FacilitySpecialty[]
+  openingHours      FacilityOpeningHours[]
   staff             StaffProfile[]
   appointments      Appointment[]
   medicalRecords    MedicalRecord[]
-  outgoingReferrals Referral[]          @relation("ReferralFrom")
-  incomingReferrals Referral[]          @relation("ReferralTo")
+  outgoingReferrals Referral[]             @relation("ReferralFrom")
+  incomingReferrals Referral[]             @relation("ReferralTo")
 
   @@index([communeCode])
   @@index([type])
   @@map("health_facilities")
+}
+
+/// Giờ làm việc của cơ sở theo ngày trong tuần (mỗi ngày có thể có nhiều ca: sáng, chiều)
+model FacilityOpeningHours {
+  id          String @id @default(uuid(7)) @db.Uuid
+  facilityId  String @map("facility_id") @db.Uuid
+  /// 0 = Chủ nhật, 1 = Thứ Hai … 6 = Thứ Bảy
+  dayOfWeek   Int    @map("day_of_week") @db.SmallInt
+  /// Phút tính từ 00:00 giờ Việt Nam, VD 450 = 07:30
+  startMinute Int    @map("start_minute") @db.SmallInt
+  endMinute   Int    @map("end_minute") @db.SmallInt
+
+  facility HealthFacility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+
+  @@index([facilityId, dayOfWeek])
+  @@map("facility_opening_hours")
 }
 
 /// Danh mục chuyên khoa
@@ -396,6 +413,11 @@ model Appointment {
   initialSymptoms    String?           @map("initial_symptoms")
   status             AppointmentStatus @default(PENDING)
   cancellationReason String?           @map("cancellation_reason")
+  confirmedAt        DateTime?         @map("confirmed_at")
+  checkedInAt        DateTime?         @map("checked_in_at")
+  cancelledAt        DateTime?         @map("cancelled_at")
+  /// Ai huỷ: bệnh nhân hay cơ sở y tế
+  cancelledByPatient Boolean?          @map("cancelled_by_patient")
   /// Nhân viên tiếp đón đã duyệt / huỷ / check-in
   handledById        String?           @map("handled_by_id") @db.Uuid
   createdAt          DateTime          @default(now()) @map("created_at")
