@@ -69,6 +69,7 @@ export const portals: Record<Portal, PortalConfig> = {
       { href: '/province', label: 'Điều phối cấp cứu', icon: Siren, exact: true },
       { href: '/province/referrals', label: 'Ca chuyển tuyến', icon: Ambulance },
       { href: '/province/appointments', label: 'Lịch hẹn khám', icon: CalendarCheck },
+      { href: '/province/patients', label: 'Tra cứu bệnh nhân', icon: Search },
       { href: '/province/records', label: 'Hồ sơ điều trị', icon: FileHeart },
     ],
   },

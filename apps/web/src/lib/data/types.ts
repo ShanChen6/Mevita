@@ -164,3 +164,46 @@ export interface StaffAppointment extends Appointment {
     allergies: string | null;
   };
 }
+
+export type LookupKind =
+  'NATIONAL_ID' | 'HEALTH_INSURANCE' | 'APPOINTMENT_CODE' | 'PHONE_OR_INSURANCE' | 'NAME';
+
+export interface PatientLookupResult {
+  id: string;
+  fullName: string;
+  dateOfBirth: string;
+  gender: Gender;
+  nationalId: string | null;
+  healthInsuranceNumber: string | null;
+  healthInsuranceExpiry: string | null;
+  phone: string | null;
+  bloodType: BloodType;
+  allergies: string | null;
+  chronicConditions: string | null;
+  addressDetail: string | null;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  commune: PatientProfile['commune'];
+  hasAccount: boolean;
+  totalVisits: number;
+  recentVisits: {
+    id: string;
+    code: string;
+    visitAt: string;
+    chiefComplaint: string;
+    facility: { id: string; name: string };
+    atThisFacility: boolean;
+    specialty: string | null;
+    doctor: string;
+    diagnoses: { icdCode: string; name: string; isPrimary: boolean }[];
+  }[];
+  todayAppointment: {
+    id: string;
+    code: string;
+    startAt: string;
+    status: AppointmentStatusValue;
+    reason: string;
+    specialty: { name: string } | null;
+  } | null;
+  openEncounter: { id: string; code: string; createdAt: string } | null;
+}

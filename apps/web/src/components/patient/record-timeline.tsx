@@ -3,13 +3,19 @@
 import { useState, useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
 
-import { loadMoreRecords } from '@/app/(patient)/patient/records/actions';
 import { Button } from '@/components/ui/button';
 import type { MedicalRecordItem, Page } from '@/lib/data/types';
 import { RecordCard } from './record-card';
 
 /** Dòng thời gian các lần khám, tải thêm theo trang. */
-export function RecordTimeline({ initial }: { initial: Page<MedicalRecordItem> }) {
+export function RecordTimeline({
+  initial,
+  loadMore: loadPage,
+}: {
+  initial: Page<MedicalRecordItem>;
+  /** Server Action tải trang kế tiếp theo con trỏ */
+  loadMore: (cursor: string) => Promise<Page<MedicalRecordItem> | { error: string }>;
+}) {
   const [items, setItems] = useState(initial.items);
   const [cursor, setCursor] = useState(initial.nextCursor);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +24,7 @@ export function RecordTimeline({ initial }: { initial: Page<MedicalRecordItem> }
   const loadMore = () =>
     startTransition(async () => {
       if (!cursor) return;
-      const res = await loadMoreRecords(cursor);
+      const res = await loadPage(cursor);
       if ('error' in res) return setError(res.error);
       setError(null);
       setItems((prev) => [...prev, ...res.items]);

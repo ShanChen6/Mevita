@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getMyRecords } from '@/lib/data/patient';
+import { loadMoreRecords } from './actions';
 
 export const metadata: Metadata = { title: 'Lịch sử khám bệnh' };
 
@@ -28,7 +29,7 @@ async function History() {
       </Card>
     );
   }
-  return <RecordTimeline initial={page} />;
+  return <RecordTimeline initial={page} loadMore={loadMoreRecords} />;
 }
 
 function HistorySkeleton() {

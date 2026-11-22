@@ -81,6 +81,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 - [Xác thực & phân quyền](docs/auth.md)
 - [Cổng bệnh nhân](docs/patient-portal.md)
 - [Đặt lịch khám](docs/appointments.md)
+- [Tra cứu & tiếp nhận bệnh nhân](docs/patient-lookup.md)
 
 ## Nhánh làm việc
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -11,12 +12,17 @@ function isActive(pathname: string, item: NavItem) {
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-export function SidebarNav({ portal, onNavigate }: { portal: Portal; onNavigate?: () => void }) {
-  const pathname = usePathname();
+interface ViewProps {
+  portal: Portal;
+  pathname: string | null;
+  onNavigate?: () => void;
+}
+
+function SidebarNavView({ portal, pathname, onNavigate }: ViewProps) {
   return (
     <nav aria-label="Điều hướng chính" className="flex flex-col gap-1">
       {portals[portal].nav.map((item) => {
-        const active = isActive(pathname, item);
+        const active = pathname !== null && isActive(pathname, item);
         const Icon = item.icon;
         return (
           <Link
@@ -37,5 +43,21 @@ export function SidebarNav({ portal, onNavigate }: { portal: Portal; onNavigate?
         );
       })}
     </nav>
+  );
+}
+
+function ActiveSidebarNav(props: Omit<ViewProps, 'pathname'>) {
+  return <SidebarNavView {...props} pathname={usePathname()} />;
+}
+
+/**
+ * Menu điều hướng, tô sáng mục đang xem. Đọc URL phải nằm trong <Suspense> để các trang động
+ * vẫn dựng sẵn được khung tĩnh — trong lúc chờ, hiển thị menu chưa tô sáng.
+ */
+export function SidebarNav(props: Omit<ViewProps, 'pathname'>) {
+  return (
+    <Suspense fallback={<SidebarNavView {...props} pathname={null} />}>
+      <ActiveSidebarNav {...props} />
+    </Suspense>
   );
 }

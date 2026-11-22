@@ -186,7 +186,8 @@ describe('Đặt lịch khám (e2e)', () => {
 
   it('hai bệnh nhân đặt cùng lúc khung cuối cùng: chỉ một người được', async (ctx) => {
     if (!dbReady) return ctx.skip();
-    const results = await Promise.all([book('patientB', at(10)), book('patientC', at(10))]);
+    // patientA và patientB tranh nhau; patientC giữ nguyên để dùng cho test giới hạn số lịch
+    const results = await Promise.all([book('patientA', at(10)), book('patientB', at(10))]);
     expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
   });
 

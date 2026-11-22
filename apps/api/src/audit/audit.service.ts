@@ -11,6 +11,7 @@ export interface AuditEntry {
     | 'REGISTER'
     | 'TOKEN_REUSE'
     | 'VIEW'
+    | 'LOOKUP'
     | 'CREATE'
     | 'UPDATE'
     | 'ACCESS_DENIED';
