@@ -37,7 +37,7 @@ src/app/
 
 ## Ghi chú
 
-- Mọi màn hình hiện dùng **dữ liệu mẫu** trong `src/lib/mock-data.ts` (kịch bản Mường Khương → BVĐK Lào Cai) và gắn nhãn "Wireframe" chỉ rõ task sẽ hoàn thiện.
+- Đăng nhập/đăng ký (Task 2.1) và cổng bệnh nhân — tổng quan, lịch sử khám, hồ sơ sức khoẻ (Task 2.2) — đã dùng **dữ liệu thật**. Các màn hình còn lại dùng **dữ liệu mẫu** trong `src/lib/mock-data.ts` (kịch bản Mường Khương → BVĐK Lào Cai) và gắn nhãn "Wireframe" chỉ rõ task sẽ hoàn thiện.
 - Nhãn tiếng Việt của các enum (trạng thái lịch hẹn, mức độ ưu tiên…) nằm ở `src/lib/labels.ts`, bám theo Prisma schema.
 - Thời gian hiển thị theo múi giờ `Asia/Ho_Chi_Minh` (`src/lib/format.ts`).
-- Bảo vệ route theo vai trò (bệnh nhân không vào được `/commune`…) thực hiện ở Task 2.1.
+- Bảo vệ route theo vai trò: xem [docs/auth.md](auth.md).

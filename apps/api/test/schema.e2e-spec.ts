@@ -263,6 +263,7 @@ describe('Prisma schema (DB integration)', () => {
           { code: 'J18.9', nameVi: 'Viêm phổi' },
           { code: 'I10', nameVi: 'Tăng huyết áp vô căn' },
         ],
+        skipDuplicates: true,
       });
       const record = await tx.medicalRecord.create({
         data: {

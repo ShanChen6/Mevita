@@ -88,3 +88,48 @@ export const facilityType: Record<FacilityType, string> = {
   REGIONAL_HOSPITAL: 'Bệnh viện khu vực',
   CENTRAL_HOSPITAL: 'Bệnh viện Trung ương',
 };
+
+export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
+export type BloodType =
+  | 'A_POSITIVE'
+  | 'A_NEGATIVE'
+  | 'B_POSITIVE'
+  | 'B_NEGATIVE'
+  | 'AB_POSITIVE'
+  | 'AB_NEGATIVE'
+  | 'O_POSITIVE'
+  | 'O_NEGATIVE'
+  | 'UNKNOWN';
+export type EncounterType = 'OUTPATIENT' | 'EMERGENCY' | 'INPATIENT';
+export type ClinicalImageType =
+  'LAB_RESULT' | 'XRAY' | 'ULTRASOUND' | 'CT' | 'MRI' | 'ECG' | 'OTHER';
+
+export const gender: Record<Gender, string> = { MALE: 'Nam', FEMALE: 'Nữ', OTHER: 'Khác' };
+
+export const bloodType: Record<BloodType, string> = {
+  A_POSITIVE: 'A+',
+  A_NEGATIVE: 'A−',
+  B_POSITIVE: 'B+',
+  B_NEGATIVE: 'B−',
+  AB_POSITIVE: 'AB+',
+  AB_NEGATIVE: 'AB−',
+  O_POSITIVE: 'O+',
+  O_NEGATIVE: 'O−',
+  UNKNOWN: 'Chưa rõ',
+};
+
+export const encounterType: Record<EncounterType, string> = {
+  OUTPATIENT: 'Khám ngoại trú',
+  EMERGENCY: 'Cấp cứu',
+  INPATIENT: 'Điều trị nội trú',
+};
+
+export const clinicalImageType: Record<ClinicalImageType, string> = {
+  LAB_RESULT: 'Xét nghiệm',
+  XRAY: 'X-quang',
+  ULTRASOUND: 'Siêu âm',
+  CT: 'CT',
+  MRI: 'MRI',
+  ECG: 'Điện tim',
+  OTHER: 'Khác',
+};

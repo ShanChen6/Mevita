@@ -5,7 +5,14 @@ import { PrismaService } from '../prisma/prisma.service.js';
 export interface AuditEntry {
   userId?: string | null;
   action:
-    'LOGIN' | 'LOGIN_FAILED' | 'LOGOUT' | 'REGISTER' | 'TOKEN_REUSE' | 'VIEW' | 'ACCESS_DENIED';
+    | 'LOGIN'
+    | 'LOGIN_FAILED'
+    | 'LOGOUT'
+    | 'REGISTER'
+    | 'TOKEN_REUSE'
+    | 'VIEW'
+    | 'UPDATE'
+    | 'ACCESS_DENIED';
   entityType: string;
   entityId?: string | null;
   metadata?: Prisma.InputJsonValue;

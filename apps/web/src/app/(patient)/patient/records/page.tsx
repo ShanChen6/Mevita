@@ -1,14 +1,45 @@
 import type { Metadata } from 'next';
-import { Building2, ImageIcon, Pill, Stethoscope } from 'lucide-react';
+import Link from 'next/link';
+import { Suspense } from 'react';
+import { FileHeart } from 'lucide-react';
 
+import { RecordTimeline } from '@/components/patient/record-timeline';
 import { PageHeader } from '@/components/shared/page-header';
-import { WireframeNote } from '@/components/shared/wireframe-note';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatDate, formatDecimal, formatTime } from '@/lib/format';
-import { medicalRecords } from '@/lib/mock-data';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { getMyRecords } from '@/lib/data/patient';
 
 export const metadata: Metadata = { title: 'Lịch sử khám bệnh' };
+
+async function History() {
+  const page = await getMyRecords();
+  if (page.items.length === 0) {
+    return (
+      <Card className="items-center gap-3 px-6 py-12 text-center">
+        <FileHeart className="text-muted-foreground size-8" aria-hidden />
+        <p className="font-medium">Chưa có lần khám nào được lưu</p>
+        <p className="text-muted-foreground max-w-md text-sm">
+          Sau mỗi lần khám tại cơ sở y tế dùng Mevita, bác sĩ ký xác nhận và hồ sơ sẽ xuất hiện tại
+          đây.
+        </p>
+        <Button asChild>
+          <Link href="/patient/appointments/new">Đặt lịch khám</Link>
+        </Button>
+      </Card>
+    );
+  }
+  return <RecordTimeline initial={page} />;
+}
+
+function HistorySkeleton() {
+  return (
+    <div className="flex flex-col gap-6" aria-busy aria-label="Đang tải lịch sử khám">
+      {[0, 1].map((i) => (
+        <div key={i} className="bg-muted/50 h-56 animate-pulse rounded-xl border" />
+      ))}
+    </div>
+  );
+}
 
 export default function MedicalHistoryPage() {
   return (
@@ -17,81 +48,9 @@ export default function MedicalHistoryPage() {
         title="Lịch sử khám bệnh"
         description="Mọi lần khám tại các cơ sở y tế, kèm bác sĩ, chẩn đoán, đơn thuốc và kết quả cận lâm sàng."
       />
-      <WireframeNote task="2.2" />
-
-      <ol className="relative flex flex-col gap-6 border-l pl-6 sm:ml-3">
-        {medicalRecords.map((r) => (
-          <li key={r.id} className="relative">
-            <span
-              aria-hidden
-              className="border-background bg-primary ring-primary/30 absolute -left-[31px] top-5 size-3 rounded-full border-2 ring-2"
-            />
-            <Card className="gap-4">
-              <CardHeader>
-                <p className="text-primary text-xs font-medium">
-                  {formatTime(r.visitAt)} · {formatDate(r.visitAt)}
-                </p>
-                <CardTitle className="text-lg">{r.chiefComplaint}</CardTitle>
-                <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                  <span className="flex items-center gap-1">
-                    <Stethoscope className="size-3.5" aria-hidden /> {r.doctorName} · {r.specialty}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Building2 className="size-3.5" aria-hidden /> {r.facility.name}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="grid gap-4 text-sm md:grid-cols-3">
-                <div className="flex flex-col gap-2">
-                  <p className="font-medium">Chẩn đoán (ICD-10)</p>
-                  {r.diagnoses.map((d) => (
-                    <p key={d.code} className="flex items-start gap-2">
-                      <Badge variant={d.primary ? 'default' : 'outline'} className="font-mono">
-                        {d.code}
-                      </Badge>
-                      <span>
-                        {d.name}
-                        {d.primary && <span className="text-muted-foreground"> (chính)</span>}
-                      </span>
-                    </p>
-                  ))}
-                </div>
-                <div className="flex flex-col gap-2">
-                  <p className="flex items-center gap-1 font-medium">
-                    <Pill className="size-3.5" aria-hidden /> Đơn thuốc
-                  </p>
-                  {r.prescription.map((p) => (
-                    <p key={p.drug}>
-                      <span className="font-medium">{p.drug}</span>
-                      <span className="text-muted-foreground block">{p.instructions}</span>
-                    </p>
-                  ))}
-                </div>
-                <div className="flex flex-col gap-2">
-                  <p className="font-medium">Sinh tồn</p>
-                  <p className="text-muted-foreground">
-                    Mạch {r.vitals.pulse} · HA {r.vitals.bp} · {formatDecimal(r.vitals.temperature)}
-                    °C · SpO2 {r.vitals.spo2}%
-                  </p>
-                  {r.images > 0 && (
-                    <div className="flex gap-2">
-                      {Array.from({ length: r.images }, (_, i) => (
-                        <div
-                          key={i}
-                          className="bg-muted text-muted-foreground flex size-16 items-center justify-center rounded-md border"
-                          title="Ảnh cận lâm sàng (Cloudinary)"
-                        >
-                          <ImageIcon className="size-5" aria-hidden />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </li>
-        ))}
-      </ol>
+      <Suspense fallback={<HistorySkeleton />}>
+        <History />
+      </Suspense>
     </>
   );
 }

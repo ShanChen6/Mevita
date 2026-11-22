@@ -276,9 +276,10 @@ model Specialty {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  facilities   FacilitySpecialty[]
-  staff        StaffProfile[]
-  appointments Appointment[]
+  facilities     FacilitySpecialty[]
+  staff          StaffProfile[]
+  appointments   Appointment[]
+  medicalRecords MedicalRecord[]
 
   @@map("specialties")
 }
@@ -442,6 +443,8 @@ model MedicalRecord {
   /// Bác sĩ trực tiếp khám (tài khoản đang đăng nhập khi tạo)
   doctorId            String        @map("doctor_id") @db.Uuid
   facilityId          String        @map("facility_id") @db.Uuid
+  /// Chuyên khoa của lần khám (lưu tại thời điểm khám, không đổi khi bác sĩ chuyển khoa)
+  specialtyId         String?       @map("specialty_id") @db.Uuid
   /// Lịch hẹn được chuyển thành phiếu khám này (nếu có)
   appointmentId       String?       @unique @map("appointment_id") @db.Uuid
   /// Phiếu chuyển tuyến mà hồ sơ này tiếp nối điều trị (tuyến trên)
@@ -481,6 +484,7 @@ model MedicalRecord {
   patient           Patient            @relation(fields: [patientId], references: [id], onDelete: Restrict)
   doctor            User               @relation("RecordDoctor", fields: [doctorId], references: [id], onDelete: Restrict)
   facility          HealthFacility     @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  specialty         Specialty?         @relation(fields: [specialtyId], references: [id], onDelete: SetNull)
   appointment       Appointment?       @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
   sourceReferral    Referral?          @relation("ReferralContinuation", fields: [sourceReferralId], references: [id], onDelete: SetNull)
   diagnoses         Diagnosis[]
