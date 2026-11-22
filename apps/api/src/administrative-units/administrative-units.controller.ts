@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Public } from '../auth/decorators/public.decorator.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import {
   communeCodeSchema,
@@ -10,6 +11,7 @@ import {
 } from './administrative-units.schemas.js';
 import { AdministrativeUnitsService } from './administrative-units.service.js';
 
+@Public()
 @Controller()
 export class AdministrativeUnitsController {
   constructor(private readonly service: AdministrativeUnitsService) {}

@@ -170,6 +170,8 @@ model RefreshToken {
   tokenHash String    @unique @map("token_hash")
   expiresAt DateTime  @map("expires_at")
   revokedAt DateTime? @map("revoked_at")
+  /// Thời điểm token bị thay bằng token mới (xoay vòng). Khác null = thu hồi do xoay vòng, không phải đăng xuất.
+  rotatedAt DateTime? @map("rotated_at")
   userAgent String?   @map("user_agent") @db.VarChar(500)
   ipAddress String?   @map("ip_address") @db.VarChar(45)
   createdAt DateTime  @default(now()) @map("created_at")

@@ -25,6 +25,8 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://mevita:mevita@localhost:5432/mevita?schema=public
+      # Khoá chỉ dùng cho CI
+      JWT_ACCESS_SECRET: ci-only-secret-not-for-production-0123456789
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

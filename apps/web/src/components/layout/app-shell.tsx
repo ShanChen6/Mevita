@@ -1,32 +1,18 @@
-import Link from 'next/link';
-import { LogOut } from 'lucide-react';
+import { Suspense } from 'react';
 
-import { Button } from '@/components/ui/button';
 import { Brand } from './brand';
 import { MobileNav } from './mobile-nav';
 import type { Portal } from './portals';
 import { SidebarNav } from './sidebar-nav';
+import { UserMenu, UserMenuSkeleton } from './user-menu';
 
 interface AppShellProps {
   portal: Portal;
-  user: { name: string; subtitle: string };
   children: React.ReactNode;
 }
 
-function initials(name: string) {
-  const parts = name
-    .replace(/^(BS|ĐD|ThS|TS)\.\s*/i, '')
-    .trim()
-    .split(/\s+/);
-  return parts
-    .slice(-2)
-    .map((p) => p[0])
-    .join('')
-    .toUpperCase();
-}
-
 /** Khung giao diện chung cho 3 phân hệ: sidebar (desktop), menu trượt (mobile), thanh trên cùng. */
-export function AppShell({ portal, user, children }: AppShellProps) {
+export function AppShell({ portal, children }: AppShellProps) {
   return (
     <div className="flex min-h-svh w-full">
       <aside className="bg-card sticky top-0 hidden h-svh w-64 shrink-0 flex-col gap-6 border-r p-4 lg:flex">
@@ -41,21 +27,9 @@ export function AppShell({ portal, user, children }: AppShellProps) {
             <span className="text-sm font-bold">Mevita</span>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium leading-tight">{user.name}</p>
-              <p className="text-muted-foreground text-xs leading-tight">{user.subtitle}</p>
-            </div>
-            <span
-              aria-hidden
-              className="bg-primary/10 text-primary flex size-8 items-center justify-center rounded-full text-xs font-semibold"
-            >
-              {initials(user.name)}
-            </span>
-            <Button variant="ghost" size="icon" asChild aria-label="Đăng xuất">
-              <Link href="/login">
-                <LogOut />
-              </Link>
-            </Button>
+            <Suspense fallback={<UserMenuSkeleton />}>
+              <UserMenu />
+            </Suspense>
           </div>
         </header>
 

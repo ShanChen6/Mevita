@@ -5,6 +5,7 @@ import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
 import { seedAdministrativeUnits } from './seeds/administrative-units.js';
+import { seedDemo } from './seeds/demo.js';
 import { seedSpecialties } from './seeds/specialties.js';
 
 async function main() {
@@ -15,6 +16,7 @@ async function main() {
   try {
     await seedAdministrativeUnits(prisma);
     await seedSpecialties(prisma);
+    await seedDemo(prisma);
   } finally {
     await prisma.$disconnect();
   }

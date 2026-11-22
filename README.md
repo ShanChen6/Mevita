@@ -36,8 +36,21 @@ pnpm db:seed
 pnpm dev
 ```
 
-- Web: http://localhost:3000
+- Web: http://localhost:3000 (đăng nhập bằng tài khoản demo, xem bên dưới)
 - API: http://localhost:4000/api (kiểm tra: `GET /api/health`)
+
+`JWT_ACCESS_SECRET` trong `apps/api/.env` và `apps/web/.env.local` **phải giống nhau** (web dùng nó để kiểm tra phiên).
+
+Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026`, chỉ tạo khi không phải production):
+
+| Vai trò                  | Email               |
+| ------------------------ | ------------------- |
+| Bệnh nhân                | `cuong@mevita.vn`   |
+| Bác sĩ Trạm Y tế Xã      | `bs.an@mevita.vn`   |
+| Điều dưỡng đi xe         | `dd.hoa@mevita.vn`  |
+| Bác sĩ BVĐK Tỉnh Lào Cai | `bs.binh@mevita.vn` |
+| Bác sĩ BV Việt Đức       | `bs.duc@mevita.vn`  |
+| Quản trị                 | `admin@mevita.vn`   |
 
 Điền `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` trong `apps/api/.env` để bật lưu trữ ảnh cận lâm sàng. Khi đã cấu hình đúng, `GET /api/health` trả về `"cloudinary": "connected"`.
 
@@ -65,6 +78,7 @@ pnpm dev
 - [Thiết kế CSDL & ERD](docs/database.md)
 - [Danh mục hành chính 2 cấp](docs/administrative-units.md)
 - [Cấu trúc giao diện 3 phân hệ](docs/ui-structure.md)
+- [Xác thực & phân quyền](docs/auth.md)
 
 ## Nhánh làm việc
 

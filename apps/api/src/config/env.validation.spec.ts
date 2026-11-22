@@ -1,7 +1,10 @@
 import { validateEnv } from './env.validation.js';
 
 describe('validateEnv', () => {
-  const base = { DATABASE_URL: 'postgresql://mevita:mevita@localhost:5432/mevita' };
+  const base = {
+    DATABASE_URL: 'postgresql://mevita:mevita@localhost:5432/mevita',
+    JWT_ACCESS_SECRET: 'x'.repeat(32),
+  };
 
   it('áp dụng giá trị mặc định', () => {
     const env = validateEnv(base);
@@ -17,5 +20,9 @@ describe('validateEnv', () => {
 
   it('báo lỗi khi thiếu DATABASE_URL', () => {
     expect(() => validateEnv({})).toThrow(/DATABASE_URL/);
+  });
+
+  it('yêu cầu JWT_ACCESS_SECRET đủ dài', () => {
+    expect(() => validateEnv({ ...base, JWT_ACCESS_SECRET: 'short' })).toThrow(/JWT_ACCESS_SECRET/);
   });
 });

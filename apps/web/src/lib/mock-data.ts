@@ -53,12 +53,6 @@ export const facilities = {
   },
 } satisfies Record<string, MockFacility>;
 
-export const currentUsers = {
-  patient: { name: 'Lò Văn Cường', subtitle: 'Bệnh nhân' },
-  commune: { name: 'BS. Nguyễn Văn An', subtitle: facilities.muongKhuong.name },
-  province: { name: 'BS. Trần Thị Bình', subtitle: facilities.laoCaiGeneral.name },
-};
-
 export interface MockPatient {
   id: string;
   fullName: string;
