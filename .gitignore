@@ -10,3 +10,8 @@ coverage/
 .DS_Store
 .idea/
 .vscode/
+build/
+*.tsbuildinfo
+.vercel
+*.pem
+.pnpm-debug.log*
