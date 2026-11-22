@@ -9,6 +9,22 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: mevita
+          POSTGRES_PASSWORD: mevita
+          POSTGRES_DB: mevita
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mevita -d mevita"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://mevita:mevita@localhost:5432/mevita?schema=public
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -21,5 +37,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm db:deploy
+      - run: pnpm db:seed
       - run: pnpm --filter @mevita/api test:e2e
       - run: pnpm build

@@ -1,0 +1,18 @@
+{
+  "source": "https://github.com/thanglequoc/vietnamese-provinces-database",
+  "sourceCommit": "8b78ba5118715e1fa81769286724db79346abf52",
+  "license": "MIT",
+  "datasetVersion": "v5.2.0",
+  "latestDecree": "388/NQ-UBTVQH16",
+  "generatedAt": "2026-09-20T13:13:17Z",
+  "baseDecision": "19/2025/QĐ-TTg (Bảng danh mục và mã số các đơn vị hành chính Việt Nam, hiệu lực 01/07/2025)",
+  "counts": {
+    "provinces": 34,
+    "municipalities": 9,
+    "provincesOnly": 25,
+    "communes": 3321,
+    "wards": 709,
+    "rural": 2599,
+    "specialZones": 13
+  }
+}

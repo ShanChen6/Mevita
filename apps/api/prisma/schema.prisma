@@ -1,0 +1,77 @@
+// Mevita — Prisma schema
+// Danh mục hành chính theo mô hình chính quyền địa phương 2 cấp (Tỉnh -> Xã), không qua cấp Huyện.
+
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "esm"
+  importFileExtension    = "js"
+  generatedFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────
+// DANH MỤC HÀNH CHÍNH
+// ─────────────────────────────────────────────────────────────
+
+/// Loại đơn vị hành chính cấp Tỉnh
+enum ProvinceType {
+  /// Thành phố trực thuộc Trung ương
+  MUNICIPALITY
+  /// Tỉnh
+  PROVINCE
+}
+
+/// Loại đơn vị hành chính cấp Xã
+enum CommuneType {
+  /// Phường
+  WARD
+  /// Xã
+  COMMUNE
+  /// Đặc khu tại hải đảo
+  SPECIAL_ZONE
+}
+
+/// Đơn vị hành chính cấp Tỉnh (34 đơn vị)
+model Province {
+  /// Mã đơn vị hành chính chính thức (QĐ 19/2025/QĐ-TTg), 2 chữ số
+  code       String       @id @db.VarChar(2)
+  name       String       @db.VarChar(100)
+  nameEn     String       @map("name_en") @db.VarChar(100)
+  fullName   String       @map("full_name") @db.VarChar(150)
+  fullNameEn String       @map("full_name_en") @db.VarChar(150)
+  /// Tên không dấu, phân tách bằng "_" (vd: "lao_cai") — dùng cho tìm kiếm không dấu
+  codeName   String       @unique @map("code_name") @db.VarChar(100)
+  type       ProvinceType
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  communes Commune[]
+
+  @@map("provinces")
+}
+
+/// Đơn vị hành chính cấp Xã: Xã / Phường / Đặc khu (3.321 đơn vị)
+model Commune {
+  /// Mã đơn vị hành chính chính thức (QĐ 19/2025/QĐ-TTg), 5 chữ số
+  code         String      @id @db.VarChar(5)
+  name         String      @db.VarChar(100)
+  nameEn       String      @map("name_en") @db.VarChar(100)
+  fullName     String      @map("full_name") @db.VarChar(150)
+  fullNameEn   String      @map("full_name_en") @db.VarChar(150)
+  /// Tên không dấu, phân tách bằng "_" (vd: "muong_khuong") — không duy nhất trên toàn quốc
+  codeName     String      @map("code_name") @db.VarChar(100)
+  type         CommuneType
+  provinceCode String      @map("province_code") @db.VarChar(2)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  province Province @relation(fields: [provinceCode], references: [code], onUpdate: Cascade, onDelete: Restrict)
+
+  @@index([provinceCode])
+  @@index([codeName])
+  @@map("communes")
+}

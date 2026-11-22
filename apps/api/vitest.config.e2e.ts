@@ -8,7 +8,9 @@ export default defineConfig({
     include: ['**/*.e2e-spec.ts'],
     env: {
       NODE_ENV: 'test',
-      DATABASE_URL: 'postgresql://mevita:mevita@localhost:5432/mevita_test',
+      DATABASE_URL:
+        process.env.DATABASE_URL ??
+        'postgresql://mevita:mevita@localhost:5432/mevita?schema=public',
     },
   },
 });

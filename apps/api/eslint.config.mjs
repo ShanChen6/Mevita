@@ -4,7 +4,15 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'coverage/**', 'eslint.config.mjs'] },
+  {
+    ignores: [
+      'dist/**',
+      'coverage/**',
+      'src/generated/**',
+      'eslint.config.mjs',
+      'prisma.config.ts',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   prettier,

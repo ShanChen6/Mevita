@@ -31,6 +31,8 @@ cp .env.example .env
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 pnpm db:up
+pnpm db:migrate
+pnpm db:seed
 pnpm dev
 ```
 
