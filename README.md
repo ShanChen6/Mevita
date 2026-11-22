@@ -43,18 +43,27 @@ pnpm dev
 
 ## Lệnh thường dùng
 
-| Lệnh             | Mô tả                                 |
-| ---------------- | ------------------------------------- |
-| `pnpm dev`       | Chạy song song web và api             |
-| `pnpm dev:web`   | Chỉ chạy web                          |
-| `pnpm dev:api`   | Chỉ chạy api                          |
-| `pnpm build`     | Build toàn bộ                         |
-| `pnpm lint`      | ESLint toàn bộ                        |
-| `pnpm typecheck` | Kiểm tra kiểu TypeScript              |
-| `pnpm test`      | Chạy unit test                        |
-| `pnpm format`    | Format code bằng Prettier             |
-| `pnpm db:up`     | Khởi động PostgreSQL (Docker Compose) |
-| `pnpm db:down`   | Dừng PostgreSQL                       |
+| Lệnh              | Mô tả                                           |
+| ----------------- | ----------------------------------------------- |
+| `pnpm dev`        | Chạy song song web và api                       |
+| `pnpm dev:web`    | Chỉ chạy web                                    |
+| `pnpm dev:api`    | Chỉ chạy api                                    |
+| `pnpm build`      | Build toàn bộ                                   |
+| `pnpm lint`       | ESLint toàn bộ                                  |
+| `pnpm typecheck`  | Kiểm tra kiểu TypeScript                        |
+| `pnpm test`       | Chạy unit test                                  |
+| `pnpm format`     | Format code bằng Prettier                       |
+| `pnpm db:up`      | Khởi động PostgreSQL (Docker Compose)           |
+| `pnpm db:down`    | Dừng PostgreSQL                                 |
+| `pnpm db:migrate` | Chạy migration (Prisma)                         |
+| `pnpm db:seed`    | Nạp danh mục: 34 tỉnh, 3.321 xã, 25 chuyên khoa |
+| `pnpm db:studio`  | Mở Prisma Studio                                |
+
+## Tài liệu
+
+- [Lộ trình triển khai](docs/ROADMAP.md)
+- [Thiết kế CSDL & ERD](docs/database.md)
+- [Danh mục hành chính 2 cấp](docs/administrative-units.md)
 
 ## Nhánh làm việc
 
