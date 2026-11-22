@@ -1,0 +1,270 @@
+code,name_vi,name_en,chapter
+A01.0,Bệnh thương hàn,Typhoid fever,I
+A03.9,"Bệnh lỵ trực khuẩn, không đặc hiệu","Shigellosis, unspecified",I
+A06.0,Lỵ amip cấp,Acute amoebic dysentery,I
+A09.0,Viêm dạ dày ruột và viêm đại tràng khác do nhiễm trùng,Other and unspecified gastroenteritis and colitis of infectious origin,I
+A09.9,Viêm dạ dày ruột và viêm đại tràng không rõ nguồn gốc,Gastroenteritis and colitis of unspecified origin,I
+A15.0,"Lao phổi, xác nhận bằng soi đờm","Tuberculosis of lung, confirmed by sputum microscopy",I
+A16.2,"Lao phổi, không xác nhận vi khuẩn học hoặc mô học","Tuberculosis of lung, without mention of bacteriological or histological confirmation",I
+A37.9,"Ho gà, không đặc hiệu","Whooping cough, unspecified",I
+A75.3,Sốt mò (sốt do Orientia tsutsugamushi),Typhus fever due to Rickettsia tsutsugamushi,I
+A90,Sốt Dengue,Dengue fever [classical dengue],I
+A91,Sốt xuất huyết Dengue,Dengue haemorrhagic fever,I
+B01.9,Thuỷ đậu không biến chứng,Varicella without complication,I
+B02.9,Zona không biến chứng,Zoster without complication,I
+B05.9,Sởi không biến chứng,Measles without complication,I
+B08.4,Bệnh tay chân miệng,Enteroviral vesicular stomatitis with exanthem,I
+B15.9,Viêm gan A không có hôn mê gan,Hepatitis A without hepatic coma,I
+B16.9,"Viêm gan B cấp, không có đồng nhiễm delta và không có hôn mê gan",Acute hepatitis B without delta-agent and without hepatic coma,I
+B18.1,"Viêm gan B mạn, không có đồng nhiễm delta",Chronic viral hepatitis B without delta-agent,I
+B18.2,Viêm gan C mạn,Chronic viral hepatitis C,I
+B20,Bệnh do HIV gây bệnh nhiễm trùng và ký sinh trùng,HIV disease resulting in infectious and parasitic diseases,I
+B26.9,Quai bị không biến chứng,Mumps without complication,I
+B35.4,Nấm da thân,Tinea corporis,I
+B37.0,Nấm Candida miệng (tưa miệng),Candidal stomatitis,I
+B50.9,"Sốt rét do Plasmodium falciparum, không đặc hiệu","Plasmodium falciparum malaria, unspecified",I
+B54,Sốt rét không đặc hiệu,Unspecified malaria,I
+B76.9,"Bệnh giun móc, không đặc hiệu","Hookworm disease, unspecified",I
+B77.9,"Bệnh giun đũa, không đặc hiệu","Ascariasis, unspecified",I
+B86,Bệnh ghẻ,Scabies,I
+C16.9,"U ác của dạ dày, không đặc hiệu","Malignant neoplasm of stomach, unspecified",II
+C18.9,"U ác của đại tràng, không đặc hiệu","Malignant neoplasm of colon, unspecified",II
+C22.0,Ung thư biểu mô tế bào gan,Liver cell carcinoma,II
+C34.9,"U ác của phế quản hoặc phổi, không đặc hiệu","Malignant neoplasm of bronchus or lung, unspecified",II
+C50.9,"U ác của vú, không đặc hiệu","Malignant neoplasm of breast, unspecified",II
+C53.9,"U ác của cổ tử cung, không đặc hiệu","Malignant neoplasm of cervix uteri, unspecified",II
+D25.9,"U cơ trơn tử cung, không đặc hiệu","Leiomyoma of uterus, unspecified",II
+D50.9,"Thiếu máu do thiếu sắt, không đặc hiệu","Iron deficiency anaemia, unspecified",III
+D64.9,"Thiếu máu, không đặc hiệu","Anaemia, unspecified",III
+D69.6,"Giảm tiểu cầu, không đặc hiệu","Thrombocytopenia, unspecified",III
+E03.9,"Suy giáp, không đặc hiệu","Hypothyroidism, unspecified",IV
+E04.9,"Bướu giáp không độc, không đặc hiệu","Nontoxic goitre, unspecified",IV
+E05.9,"Nhiễm độc giáp (cường giáp), không đặc hiệu","Thyrotoxicosis, unspecified",IV
+E10.9,Đái tháo đường type 1 không có biến chứng,Insulin-dependent diabetes mellitus without complications,IV
+E11.2,Đái tháo đường type 2 có biến chứng thận,Non-insulin-dependent diabetes mellitus with renal complications,IV
+E11.9,Đái tháo đường type 2 không có biến chứng,Non-insulin-dependent diabetes mellitus without complications,IV
+E16.2,"Hạ đường huyết, không đặc hiệu","Hypoglycaemia, unspecified",IV
+E43,"Suy dinh dưỡng thể nặng do thiếu protein – năng lượng, không đặc hiệu",Unspecified severe protein-energy malnutrition,IV
+E44.0,Suy dinh dưỡng thể vừa do thiếu protein – năng lượng,Moderate protein-energy malnutrition,IV
+E46,"Suy dinh dưỡng protein – năng lượng, không đặc hiệu",Unspecified protein-energy malnutrition,IV
+E66.9,"Béo phì, không đặc hiệu","Obesity, unspecified",IV
+E78.5,"Tăng lipid máu, không đặc hiệu","Hyperlipidaemia, unspecified",IV
+E86,Giảm thể tích (mất nước),Volume depletion,IV
+E87.6,Hạ kali máu,Hypokalaemia,IV
+F10.2,Rối loạn tâm thần và hành vi do rượu: hội chứng nghiện,Mental and behavioural disorders due to use of alcohol: dependence syndrome,V
+F20.9,"Tâm thần phân liệt, không đặc hiệu","Schizophrenia, unspecified",V
+F32.9,"Giai đoạn trầm cảm, không đặc hiệu","Depressive episode, unspecified",V
+F41.1,Rối loạn lo âu lan toả,Generalized anxiety disorder,V
+F41.9,"Rối loạn lo âu, không đặc hiệu","Anxiety disorder, unspecified",V
+F51.0,Mất ngủ không thực tổn,Nonorganic insomnia,V
+G03.9,"Viêm màng não, không đặc hiệu","Meningitis, unspecified",VI
+G40.9,"Động kinh, không đặc hiệu","Epilepsy, unspecified",VI
+G43.9,"Migraine, không đặc hiệu","Migraine, unspecified",VI
+G44.2,Đau đầu do căng thẳng,Tension-type headache,VI
+G45.9,"Cơn thiếu máu não thoáng qua, không đặc hiệu","Transient cerebral ischaemic attack, unspecified",VI
+G51.0,Liệt Bell (liệt dây thần kinh mặt),Bell palsy,VI
+G56.0,Hội chứng ống cổ tay,Carpal tunnel syndrome,VI
+H10.9,"Viêm kết mạc, không đặc hiệu","Conjunctivitis, unspecified",VII
+H25.9,"Đục thể thuỷ tinh tuổi già, không đặc hiệu","Senile cataract, unspecified",VII
+H40.9,"Glôcôm, không đặc hiệu","Glaucoma, unspecified",VII
+H52.1,Cận thị,Myopia,VII
+H65.9,"Viêm tai giữa không mủ, không đặc hiệu","Nonsuppurative otitis media, unspecified",VIII
+H66.9,"Viêm tai giữa, không đặc hiệu","Otitis media, unspecified",VIII
+H81.1,Chóng mặt tư thế kịch phát lành tính,Benign paroxysmal vertigo,VIII
+H91.9,"Giảm thính lực, không đặc hiệu","Hearing loss, unspecified",VIII
+I10,Tăng huyết áp vô căn (nguyên phát),Essential (primary) hypertension,IX
+I11.9,"Bệnh tim do tăng huyết áp, không có suy tim (sung huyết)",Hypertensive heart disease without (congestive) heart failure,IX
+I20.9,"Cơn đau thắt ngực, không đặc hiệu","Angina pectoris, unspecified",IX
+I21.9,"Nhồi máu cơ tim cấp, không đặc hiệu","Acute myocardial infarction, unspecified",IX
+I25.1,Bệnh tim do xơ vữa động mạch,Atherosclerotic heart disease,IX
+I26.9,Thuyên tắc phổi không có tâm phế cấp,Pulmonary embolism without mention of acute cor pulmonale,IX
+I48.9,"Rung nhĩ và cuồng nhĩ, không đặc hiệu","Atrial fibrillation and atrial flutter, unspecified",IX
+I50.0,Suy tim sung huyết,Congestive heart failure,IX
+I50.9,"Suy tim, không đặc hiệu","Heart failure, unspecified",IX
+I61.9,"Xuất huyết trong não, không đặc hiệu","Intracerebral haemorrhage, unspecified",IX
+I63.9,"Nhồi máu não, không đặc hiệu","Cerebral infarction, unspecified",IX
+I64,"Đột quỵ, không xác định do xuất huyết hay nhồi máu","Stroke, not specified as haemorrhage or infarction",IX
+I69.4,"Di chứng đột quỵ, không xác định do xuất huyết hay nhồi máu","Sequelae of stroke, not specified as haemorrhage or infarction",IX
+I83.9,Giãn tĩnh mạch chi dưới không loét hoặc viêm,Varicose veins of lower extremities without ulcer or inflammation,IX
+I95.9,"Hạ huyết áp, không đặc hiệu","Hypotension, unspecified",IX
+J00,Viêm mũi họng cấp (cảm lạnh thông thường),Acute nasopharyngitis [common cold],X
+J01.9,"Viêm xoang cấp, không đặc hiệu","Acute sinusitis, unspecified",X
+J02.9,"Viêm họng cấp, không đặc hiệu","Acute pharyngitis, unspecified",X
+J03.9,"Viêm amidan cấp, không đặc hiệu","Acute tonsillitis, unspecified",X
+J04.0,Viêm thanh quản cấp,Acute laryngitis,X
+J06.9,"Nhiễm trùng đường hô hấp trên cấp, không đặc hiệu","Acute upper respiratory infection, unspecified",X
+J10.1,"Cúm có biểu hiện hô hấp khác, đã định danh virus cúm mùa","Influenza with other respiratory manifestations, seasonal influenza virus identified",X
+J11.1,"Cúm có biểu hiện hô hấp khác, chưa định danh virus","Influenza with other respiratory manifestations, virus not identified",X
+J12.9,"Viêm phổi do virus, không đặc hiệu","Viral pneumonia, unspecified",X
+J15.9,"Viêm phổi do vi khuẩn, không đặc hiệu","Bacterial pneumonia, unspecified",X
+J18.0,"Viêm phế quản phổi, không đặc hiệu","Bronchopneumonia, unspecified",X
+J18.9,"Viêm phổi, không đặc hiệu","Pneumonia, unspecified",X
+J20.9,"Viêm phế quản cấp, không đặc hiệu","Acute bronchitis, unspecified",X
+J21.9,"Viêm tiểu phế quản cấp, không đặc hiệu","Acute bronchiolitis, unspecified",X
+J30.4,"Viêm mũi dị ứng, không đặc hiệu","Allergic rhinitis, unspecified",X
+J32.9,"Viêm xoang mạn, không đặc hiệu","Chronic sinusitis, unspecified",X
+J35.0,Viêm amidan mạn,Chronic tonsillitis,X
+J44.1,Bệnh phổi tắc nghẽn mạn tính có đợt cấp,"Chronic obstructive pulmonary disease with acute exacerbation, unspecified",X
+J44.9,"Bệnh phổi tắc nghẽn mạn tính, không đặc hiệu","Chronic obstructive pulmonary disease, unspecified",X
+J45.9,"Hen phế quản, không đặc hiệu","Asthma, unspecified",X
+J46,Cơn hen ác tính (trạng thái hen),Status asthmaticus,X
+J81,Phù phổi,Pulmonary oedema,X
+J90,Tràn dịch màng phổi,"Pleural effusion, not elsewhere classified",X
+J93.9,"Tràn khí màng phổi, không đặc hiệu","Pneumothorax, unspecified",X
+J96.0,Suy hô hấp cấp,Acute respiratory failure,X
+K02.9,"Sâu răng, không đặc hiệu","Dental caries, unspecified",XI
+K04.0,Viêm tuỷ răng,Pulpitis,XI
+K05.1,Viêm lợi mạn,Chronic gingivitis,XI
+K12.0,Loét áp-tơ miệng tái phát,Recurrent oral aphthae,XI
+K21.9,Bệnh trào ngược dạ dày – thực quản không có viêm thực quản,Gastro-oesophageal reflux disease without oesophagitis,XI
+K25.9,"Loét dạ dày, không xác định cấp hay mạn, không chảy máu hoặc thủng","Gastric ulcer, unspecified as acute or chronic, without haemorrhage or perforation",XI
+K26.9,"Loét tá tràng, không xác định cấp hay mạn, không chảy máu hoặc thủng","Duodenal ulcer, unspecified as acute or chronic, without haemorrhage or perforation",XI
+K29.5,"Viêm dạ dày mạn, không đặc hiệu","Chronic gastritis, unspecified",XI
+K29.7,"Viêm dạ dày, không đặc hiệu","Gastritis, unspecified",XI
+K30,Khó tiêu chức năng,Functional dyspepsia,XI
+K35.2,Viêm ruột thừa cấp có viêm phúc mạc toàn thể,Acute appendicitis with generalized peritonitis,XI
+K35.8,"Viêm ruột thừa cấp, khác và không đặc hiệu","Acute appendicitis, other and unspecified",XI
+K40.9,"Thoát vị bẹn một bên, không tắc nghẽn hoặc hoại thư","Unilateral or unspecified inguinal hernia, without obstruction or gangrene",XI
+K56.7,"Tắc ruột, không đặc hiệu","Ileus, unspecified",XI
+K58.9,Hội chứng ruột kích thích không có tiêu chảy,Irritable bowel syndrome without diarrhoea,XI
+K59.0,Táo bón,Constipation,XI
+K64.9,"Trĩ, không đặc hiệu","Haemorrhoids, unspecified",XI
+K65.0,Viêm phúc mạc cấp,Acute peritonitis,XI
+K70.3,Xơ gan do rượu,Alcoholic cirrhosis of liver,XI
+K74.6,"Xơ gan, khác và không đặc hiệu",Other and unspecified cirrhosis of liver,XI
+K76.0,"Gan nhiễm mỡ, không phân loại nơi khác","Fatty (change of) liver, not elsewhere classified",XI
+K80.2,Sỏi túi mật không có viêm túi mật,Calculus of gallbladder without cholecystitis,XI
+K81.0,Viêm túi mật cấp,Acute cholecystitis,XI
+K85.9,"Viêm tuỵ cấp, không đặc hiệu","Acute pancreatitis, unspecified",XI
+K92.2,"Xuất huyết tiêu hoá, không đặc hiệu","Gastrointestinal haemorrhage, unspecified",XI
+L01.0,Chốc lở,Impetigo [any organism] [any site],XII
+L02.9,"Áp xe da, nhọt và nhọt cụm, không đặc hiệu","Cutaneous abscess, furuncle and carbuncle, unspecified",XII
+L03.9,"Viêm mô bào, không đặc hiệu","Cellulitis, unspecified",XII
+L20.9,"Viêm da cơ địa, không đặc hiệu","Atopic dermatitis, unspecified",XII
+L23.9,"Viêm da tiếp xúc dị ứng, không rõ nguyên nhân","Allergic contact dermatitis, unspecified cause",XII
+L30.9,"Viêm da, không đặc hiệu","Dermatitis, unspecified",XII
+L40.9,"Vảy nến, không đặc hiệu","Psoriasis, unspecified",XII
+L50.9,"Mày đay, không đặc hiệu","Urticaria, unspecified",XII
+L70.0,Trứng cá thông thường,Acne vulgaris,XII
+M06.9,"Viêm khớp dạng thấp, không đặc hiệu","Rheumatoid arthritis, unspecified",XIII
+M10.9,"Bệnh gút, không đặc hiệu","Gout, unspecified",XIII
+M13.9,"Viêm khớp, không đặc hiệu","Arthritis, unspecified",XIII
+M15.9,"Thoái hoá nhiều khớp, không đặc hiệu","Polyarthrosis, unspecified",XIII
+M17.9,"Thoái hoá khớp gối, không đặc hiệu","Gonarthrosis, unspecified",XIII
+M19.9,"Thoái hoá khớp, không đặc hiệu","Arthrosis, unspecified",XIII
+M47.9,"Thoái hoá cột sống, không đặc hiệu","Spondylosis, unspecified",XIII
+M51.2,Thoát vị đĩa đệm đặc hiệu khác,Other specified intervertebral disc displacement,XIII
+M54.2,Đau vùng cổ,Cervicalgia,XIII
+M54.4,Đau thắt lưng kèm đau thần kinh toạ,Lumbago with sciatica,XIII
+M54.5,Đau vùng thắt lưng,Low back pain,XIII
+M54.9,"Đau lưng, không đặc hiệu","Dorsalgia, unspecified",XIII
+M75.1,Hội chứng chóp xoay,Rotator cuff syndrome,XIII
+M79.1,Đau cơ,Myalgia,XIII
+M81.9,"Loãng xương, không đặc hiệu","Osteoporosis, unspecified",XIII
+N10,Viêm thận bể thận cấp,Acute tubulo-interstitial nephritis,XIV
+N17.9,"Suy thận cấp, không đặc hiệu","Acute renal failure, unspecified",XIV
+N18.9,"Bệnh thận mạn, không đặc hiệu","Chronic kidney disease, unspecified",XIV
+N20.0,Sỏi thận,Calculus of kidney,XIV
+N20.1,Sỏi niệu quản,Calculus of ureter,XIV
+N23,"Cơn đau quặn thận, không đặc hiệu",Unspecified renal colic,XIV
+N30.0,Viêm bàng quang cấp,Acute cystitis,XIV
+N39.0,"Nhiễm khuẩn đường tiết niệu, vị trí không xác định","Urinary tract infection, site not specified",XIV
+N40,Tăng sản tuyến tiền liệt,Hyperplasia of prostate,XIV
+N70.9,"Viêm phần phụ (vòi trứng và buồng trứng), không đặc hiệu","Salpingitis and oophoritis, unspecified",XIV
+N76.0,Viêm âm đạo cấp,Acute vaginitis,XIV
+N94.6,"Đau bụng kinh, không đặc hiệu","Dysmenorrhoea, unspecified",XIV
+N95.1,Tình trạng mãn kinh và tiền mãn kinh ở phụ nữ,Menopausal and female climacteric states,XIV
+O00.9,"Chửa ngoài tử cung, không đặc hiệu","Ectopic pregnancy, unspecified",XV
+O03.9,"Sẩy thai tự nhiên, hoàn toàn hoặc không xác định, không biến chứng","Spontaneous abortion, complete or unspecified, without complication",XV
+O13,Tăng huyết áp do thai nghén không có protein niệu đáng kể,Gestational [pregnancy-induced] hypertension,XV
+O14.9,"Tiền sản giật, không đặc hiệu","Pre-eclampsia, unspecified",XV
+O15.9,"Sản giật, không xác định thời điểm","Eclampsia, unspecified as to time period",XV
+O20.0,Dọa sẩy thai,Threatened abortion,XV
+O21.0,Nôn nghén nhẹ,Mild hyperemesis gravidarum,XV
+O46.9,"Xuất huyết trước sinh, không đặc hiệu","Antepartum haemorrhage, unspecified",XV
+O72.1,Băng huyết sau sinh khác trong 24 giờ đầu,Other immediate postpartum haemorrhage,XV
+O80.9,"Đẻ thường một thai, không đặc hiệu","Single spontaneous delivery, unspecified",XV
+P07.3,Trẻ đẻ non khác,Other preterm infants,XVI
+P22.0,Hội chứng suy hô hấp ở trẻ sơ sinh,Respiratory distress syndrome of newborn,XVI
+P36.9,"Nhiễm khuẩn sơ sinh do vi khuẩn, không đặc hiệu","Bacterial sepsis of newborn, unspecified",XVI
+P59.9,"Vàng da sơ sinh, không đặc hiệu","Neonatal jaundice, unspecified",XVI
+R00.0,"Nhịp tim nhanh, không đặc hiệu","Tachycardia, unspecified",XVIII
+R00.2,Đánh trống ngực,Palpitations,XVIII
+R04.0,Chảy máu cam,Epistaxis,XVIII
+R05,Ho,Cough,XVIII
+R06.0,Khó thở,Dyspnoea,XVIII
+R07.4,"Đau ngực, không đặc hiệu","Chest pain, unspecified",XVIII
+R10.4,"Đau bụng, khác và không đặc hiệu",Other and unspecified abdominal pain,XVIII
+R11,Buồn nôn và nôn,Nausea and vomiting,XVIII
+R31,"Đái máu, không đặc hiệu",Unspecified haematuria,XVIII
+R40.2,"Hôn mê, không đặc hiệu","Coma, unspecified",XVIII
+R42,Chóng mặt,Dizziness and giddiness,XVIII
+R50.9,"Sốt, không đặc hiệu","Fever, unspecified",XVIII
+R51,Đau đầu,Headache,XVIII
+R53,"Mệt mỏi, khó chịu",Malaise and fatigue,XVIII
+R55,Ngất,Syncope and collapse,XVIII
+R56.0,Co giật do sốt,Febrile convulsions,XVIII
+R56.8,Co giật khác và không đặc hiệu,Other and unspecified convulsions,XVIII
+R57.0,Sốc tim,Cardiogenic shock,XVIII
+R57.1,Sốc giảm thể tích,Hypovolaemic shock,XVIII
+R57.9,"Sốc, không đặc hiệu","Shock, unspecified",XVIII
+R63.4,Sụt cân bất thường,Abnormal weight loss,XVIII
+R73.9,"Tăng đường huyết, không đặc hiệu","Hyperglycaemia, unspecified",XVIII
+S00.9,"Tổn thương nông vùng đầu, phần không xác định","Superficial injury of head, part unspecified",XIX
+S01.9,"Vết thương hở vùng đầu, phần không xác định","Open wound of head, part unspecified",XIX
+S02.0,Vỡ xương vòm sọ,Fracture of vault of skull,XIX
+S02.1,Vỡ nền sọ,Fracture of base of skull,XIX
+S06.0,Chấn động não,Concussion,XIX
+S06.2,Tổn thương não lan toả,Diffuse brain injury,XIX
+S06.3,Tổn thương não khu trú,Focal brain injury,XIX
+S06.4,Xuất huyết ngoài màng cứng,Epidural haemorrhage,XIX
+S06.5,Xuất huyết dưới màng cứng do chấn thương,Traumatic subdural haemorrhage,XIX
+S06.6,Xuất huyết dưới nhện do chấn thương,Traumatic subarachnoid haemorrhage,XIX
+S06.9,"Tổn thương nội sọ, không đặc hiệu","Intracranial injury, unspecified",XIX
+S12.9,"Gãy cổ, phần không xác định","Fracture of neck, part unspecified",XIX
+S13.4,Bong gân và căng cột sống cổ,Sprain and strain of cervical spine,XIX
+S22.3,Gãy xương sườn,Fracture of rib,XIX
+S22.4,Gãy nhiều xương sườn,Multiple fractures of ribs,XIX
+S27.0,Tràn khí màng phổi do chấn thương,Traumatic pneumothorax,XIX
+S27.1,Tràn máu màng phổi do chấn thương,Traumatic haemothorax,XIX
+S32.0,Gãy đốt sống thắt lưng,Fracture of lumbar vertebra,XIX
+S36.0,Tổn thương lách,Injury of spleen,XIX
+S36.1,Tổn thương gan hoặc túi mật,Injury of liver or gallbladder,XIX
+S37.0,Tổn thương thận,Injury of kidney,XIX
+S42.0,Gãy xương đòn,Fracture of clavicle,XIX
+S42.2,Gãy đầu trên xương cánh tay,Fracture of upper end of humerus,XIX
+S52.5,Gãy đầu dưới xương quay,Fracture of lower end of radius,XIX
+S52.6,Gãy đầu dưới cả xương trụ và xương quay,Fracture of lower end of both ulna and radius,XIX
+S61.0,Vết thương hở ngón tay không tổn thương móng,Open wound of finger(s) without damage to nail,XIX
+S62.6,Gãy ngón tay khác,Fracture of other finger,XIX
+S72.0,Gãy cổ xương đùi,Fracture of neck of femur,XIX
+S72.3,Gãy thân xương đùi,Fracture of shaft of femur,XIX
+S81.8,Vết thương hở các phần khác của cẳng chân,Open wound of other parts of lower leg,XIX
+S82.2,Gãy thân xương chày,Fracture of shaft of tibia,XIX
+S82.6,Gãy mắt cá ngoài,Fracture of lateral malleolus,XIX
+S93.4,Bong gân và căng dây chằng cổ chân,Sprain and strain of ankle,XIX
+T07,Đa chấn thương không đặc hiệu,Unspecified multiple injuries,XIX
+T14.1,Vết thương hở vùng cơ thể không xác định,Open wound of unspecified body region,XIX
+T14.9,"Chấn thương, không đặc hiệu","Injury, unspecified",XIX
+T30.0,"Bỏng, vùng cơ thể không xác định, độ không xác định","Burn of unspecified body region, unspecified degree",XIX
+T51.0,Ngộ độc ethanol,Toxic effect of ethanol,XIX
+T51.1,Ngộ độc methanol,Toxic effect of methanol,XIX
+T60.0,Ngộ độc thuốc trừ sâu phospho hữu cơ và carbamat,Toxic effect of organophosphate and carbamate insecticides,XIX
+T62.0,Ngộ độc nấm,Toxic effect of ingested mushrooms,XIX
+T62.9,"Ngộ độc chất độc trong thức ăn, không đặc hiệu","Toxic effect of noxious substance eaten as food, unspecified",XIX
+T63.0,Nhiễm độc nọc rắn,Toxic effect of snake venom,XIX
+T63.4,"Nhiễm độc nọc của động vật chân đốt khác (ong, nhện…)",Toxic effect of venom of other arthropods,XIX
+T67.0,Say nóng và say nắng,Heatstroke and sunstroke,XIX
+T68,Hạ thân nhiệt,Hypothermia,XIX
+T75.1,Đuối nước và ngạt nước không tử vong,Drowning and nonfatal submersion,XIX
+T78.2,"Sốc phản vệ, không đặc hiệu","Anaphylactic shock, unspecified",XIX
+T78.4,"Dị ứng, không đặc hiệu","Allergy, unspecified",XIX
+T88.6,Sốc phản vệ do tác dụng phụ của thuốc dùng đúng chỉ định,Anaphylactic shock due to adverse effect of correct drug or medicament properly administered,XIX
+U07.1,"COVID-19, đã xác định virus","COVID-19, virus identified",XXII
+Z00.0,Khám sức khoẻ tổng quát,General medical examination,XXI
+Z00.1,Khám sức khoẻ định kỳ trẻ em,Routine child health examination,XXI
+Z09.8,Khám theo dõi sau điều trị khác,Follow-up examination after other treatment for other conditions,XXI
+Z30.0,Tư vấn chung về tránh thai,General counselling and advice on contraception,XXI
+Z34.9,"Theo dõi thai bình thường, không đặc hiệu","Supervision of normal pregnancy, unspecified",XXI
+Z39.2,Theo dõi định kỳ sau sinh,Routine postpartum follow-up,XXI
+Z76.0,Cấp lại đơn thuốc,Issue of repeat prescription,XXI

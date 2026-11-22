@@ -133,8 +133,10 @@ describe('Prisma schema (DB integration)', () => {
         },
       });
 
-      await tx.icd10Code.create({
-        data: { code: 'S06.5', nameVi: 'Chấn thương máu tụ dưới màng cứng' },
+      await tx.icd10Code.upsert({
+        where: { code: 'S06.5' },
+        create: { code: 'S06.5', nameVi: 'Chấn thương máu tụ dưới màng cứng' },
+        update: {},
       });
       const record = await tx.medicalRecord.create({
         data: {

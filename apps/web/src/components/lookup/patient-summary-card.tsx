@@ -195,7 +195,7 @@ export function PatientSummaryCard({ patient: p, portal, now }: Props) {
               chưa ký
             </span>
             <Button size="sm" asChild>
-              <Link href={`/${portal}/encounters/new?record=${encounter.id}`}>Tiếp tục khám</Link>
+              <Link href={`/${portal}/encounters/${encounter.id}`}>Tiếp tục khám</Link>
             </Button>
           </div>
         ) : !appointment || appointment.status === 'CHECKED_IN' ? (

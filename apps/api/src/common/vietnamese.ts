@@ -13,3 +13,14 @@ export function toCodeName(input: string): string {
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
 }
+
+/** Chuỗi tìm kiếm: bỏ dấu, chữ thường, gộp khoảng trắng (giữ dấu chấm của mã ICD). */
+export function toSearchText(input: string): string {
+  return input
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, ' ')
+    .trim();
+}

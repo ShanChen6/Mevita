@@ -115,7 +115,7 @@ export default function CommuneDashboardPage() {
         actions={
           <>
             <Button variant="outline" asChild>
-              <Link href="/commune/encounters/new">
+              <Link href="/commune/encounters">
                 <Stethoscope /> Khám bệnh mới
               </Link>
             </Button>

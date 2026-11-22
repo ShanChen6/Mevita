@@ -6,6 +6,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
 import { seedAdministrativeUnits } from './seeds/administrative-units.js';
 import { seedDemo } from './seeds/demo.js';
+import { seedIcd10 } from './seeds/icd10.js';
 import { seedSpecialties } from './seeds/specialties.js';
 
 async function main() {
@@ -16,6 +17,7 @@ async function main() {
   try {
     await seedAdministrativeUnits(prisma);
     await seedSpecialties(prisma);
+    await seedIcd10(prisma);
     await seedDemo(prisma);
   } finally {
     await prisma.$disconnect();

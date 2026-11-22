@@ -35,11 +35,38 @@ function canonical(value: unknown): string {
   return JSON.stringify(value ?? null);
 }
 
-/** SHA-256 của nội dung hồ sơ tại thời điểm bác sĩ ký xác nhận. */
-export function computeRecordSignature(record: SignableRecord): string {
+/**
+ * SHA-256 của nội dung hồ sơ tại thời điểm bác sĩ ký xác nhận.
+ * Chỉ lấy đúng các trường chuyên môn — các trường hệ thống (status, updatedAt, signedAt…)
+ * thay đổi khi ký nên không được đưa vào, nếu không mã băm sẽ không bao giờ khớp lại.
+ */
+export function computeRecordSignature(r: SignableRecord): string {
   const normalized = {
-    ...record,
-    diagnoses: [...record.diagnoses].sort((a, b) => a.icdCode.localeCompare(b.icdCode)),
+    id: r.id,
+    patientId: r.patientId,
+    doctorId: r.doctorId,
+    facilityId: r.facilityId,
+    visitAt: r.visitAt,
+    chiefComplaint: r.chiefComplaint,
+    symptoms: r.symptoms ?? null,
+    physicalExamination: r.physicalExamination ?? null,
+    pulse: r.pulse ?? null,
+    temperature: r.temperature ?? null,
+    systolicBp: r.systolicBp ?? null,
+    diastolicBp: r.diastolicBp ?? null,
+    respiratoryRate: r.respiratoryRate ?? null,
+    spo2: r.spo2 ?? null,
+    diagnosisNote: r.diagnosisNote ?? null,
+    treatmentPlan: r.treatmentPlan ?? null,
+    diagnoses: r.diagnoses
+      .map((d) => ({ icdCode: d.icdCode, isPrimary: d.isPrimary }))
+      .sort((a, b) => a.icdCode.localeCompare(b.icdCode)),
+    prescriptionItems: r.prescriptionItems.map((p) => ({
+      drugName: p.drugName,
+      quantity: p.quantity,
+      unit: p.unit,
+      instructions: p.instructions,
+    })),
   };
   return createHash('sha256').update(canonical(normalized)).digest('hex');
 }

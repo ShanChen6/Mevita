@@ -524,12 +524,14 @@ model MedicalRecord {
 /// Danh mục mã bệnh quốc tế ICD-10 (nạp ở Task 3.2)
 model Icd10Code {
   /// Mã ICD-10, vd: "S06.5"
-  code     String  @id @db.VarChar(10)
-  nameVi   String  @map("name_vi")
-  nameEn   String? @map("name_en")
+  code       String  @id @db.VarChar(10)
+  nameVi     String  @map("name_vi")
+  nameEn     String? @map("name_en")
   /// Chương ICD-10 (I–XXII)
-  chapter  String? @db.VarChar(10)
-  isActive Boolean @default(true) @map("is_active")
+  chapter    String? @db.VarChar(10)
+  /// Mã + tên không dấu, chữ thường — phục vụ tìm kiếm nhanh không phân biệt dấu
+  searchText String  @default("") @map("search_text")
+  isActive   Boolean @default(true) @map("is_active")
 
   diagnoses Diagnosis[]
 

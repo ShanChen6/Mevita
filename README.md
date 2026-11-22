@@ -56,21 +56,22 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 
 ## Lệnh thường dùng
 
-| Lệnh              | Mô tả                                           |
-| ----------------- | ----------------------------------------------- |
-| `pnpm dev`        | Chạy song song web và api                       |
-| `pnpm dev:web`    | Chỉ chạy web                                    |
-| `pnpm dev:api`    | Chỉ chạy api                                    |
-| `pnpm build`      | Build toàn bộ                                   |
-| `pnpm lint`       | ESLint toàn bộ                                  |
-| `pnpm typecheck`  | Kiểm tra kiểu TypeScript                        |
-| `pnpm test`       | Chạy unit test                                  |
-| `pnpm format`     | Format code bằng Prettier                       |
-| `pnpm db:up`      | Khởi động PostgreSQL (Docker Compose)           |
-| `pnpm db:down`    | Dừng PostgreSQL                                 |
-| `pnpm db:migrate` | Chạy migration (Prisma)                         |
-| `pnpm db:seed`    | Nạp danh mục: 34 tỉnh, 3.321 xã, 25 chuyên khoa |
-| `pnpm db:studio`  | Mở Prisma Studio                                |
+| Lệnh                                                | Mô tả                                           |
+| --------------------------------------------------- | ----------------------------------------------- |
+| `pnpm dev`                                          | Chạy song song web và api                       |
+| `pnpm dev:web`                                      | Chỉ chạy web                                    |
+| `pnpm dev:api`                                      | Chỉ chạy api                                    |
+| `pnpm build`                                        | Build toàn bộ                                   |
+| `pnpm lint`                                         | ESLint toàn bộ                                  |
+| `pnpm typecheck`                                    | Kiểm tra kiểu TypeScript                        |
+| `pnpm test`                                         | Chạy unit test                                  |
+| `pnpm format`                                       | Format code bằng Prettier                       |
+| `pnpm db:up`                                        | Khởi động PostgreSQL (Docker Compose)           |
+| `pnpm db:down`                                      | Dừng PostgreSQL                                 |
+| `pnpm db:migrate`                                   | Chạy migration (Prisma)                         |
+| `pnpm db:seed`                                      | Nạp danh mục: 34 tỉnh, 3.321 xã, 25 chuyên khoa |
+| `pnpm db:studio`                                    | Mở Prisma Studio                                |
+| `pnpm --filter @mevita/api icd10:import <file.csv>` | Nhập bảng ICD-10 chính thức                     |
 
 ## Tài liệu
 
@@ -82,6 +83,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 - [Cổng bệnh nhân](docs/patient-portal.md)
 - [Đặt lịch khám](docs/appointments.md)
 - [Tra cứu & tiếp nhận bệnh nhân](docs/patient-lookup.md)
+- [Khám bệnh, ICD-10 & ký hồ sơ](docs/medical-records.md)
 
 ## Nhánh làm việc
 

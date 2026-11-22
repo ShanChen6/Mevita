@@ -24,6 +24,18 @@ describe('computeRecordSignature', () => {
     expect(computeRecordSignature(base)).toMatch(/^[a-f0-9]{64}$/);
   });
 
+  it('bỏ qua trường hệ thống và trường phụ của chẩn đoán/thuốc', () => {
+    const withExtras = {
+      ...base,
+      status: 'FINALIZED',
+      updatedAt: new Date(),
+      signatureHash: 'x',
+      diagnoses: base.diagnoses.map((d) => ({ ...d, id: 'd', medicalRecordId: 'r1', note: null })),
+      prescriptionItems: base.prescriptionItems.map((p) => ({ ...p, id: 'p', sortOrder: 0 })),
+    };
+    expect(computeRecordSignature(withExtras)).toBe(computeRecordSignature(base));
+  });
+
   it('thay đổi khi nội dung chuyên môn thay đổi', () => {
     expect(computeRecordSignature({ ...base, pulse: 90 })).not.toBe(computeRecordSignature(base));
     expect(

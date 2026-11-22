@@ -207,3 +207,80 @@ export interface PatientLookupResult {
   } | null;
   openEncounter: { id: string; code: string; createdAt: string } | null;
 }
+
+export interface Icd10Option {
+  code: string;
+  nameVi: string;
+  nameEn: string | null;
+  chapter: string | null;
+}
+
+export interface EncounterQueueItem {
+  id: string;
+  code: string;
+  createdAt: string;
+  encounterType: EncounterType;
+  chiefComplaint: string;
+  specialty: { name: string } | null;
+  doctor: { id: string; fullName: string };
+  appointment: { code: string; startAt: string } | null;
+  patient: {
+    id: string;
+    fullName: string;
+    dateOfBirth: string;
+    gender: Gender;
+    allergies: string | null;
+  };
+}
+
+export interface MedicalRecordDetail {
+  id: string;
+  code: string;
+  status: 'DRAFT' | 'FINALIZED';
+  encounterType: EncounterType;
+  visitAt: string;
+  createdAt: string;
+  updatedAt: string;
+  chiefComplaint: string;
+  symptoms: string | null;
+  physicalExamination: string | null;
+  pulse: number | null;
+  temperature: number | null;
+  systolicBp: number | null;
+  diastolicBp: number | null;
+  respiratoryRate: number | null;
+  spo2: number | null;
+  weightKg: number | null;
+  heightCm: number | null;
+  diagnosisNote: string | null;
+  treatmentPlan: string | null;
+  followUpDate: string | null;
+  signedAt: string | null;
+  signatureHash: string | null;
+  facilityId: string;
+  patientId: string;
+  specialty: { id: string; code: string; name: string } | null;
+  facility: { id: string; name: string };
+  doctor: { id: string; fullName: string; academicTitle: string | null; position: string | null };
+  appointment: { id: string; code: string; startAt: string; status: AppointmentStatusValue } | null;
+  patient: {
+    id: string;
+    fullName: string;
+    dateOfBirth: string;
+    gender: Gender;
+    nationalId: string | null;
+    healthInsuranceNumber: string | null;
+    bloodType: BloodType;
+    allergies: string | null;
+    chronicConditions: string | null;
+  };
+  diagnoses: { icdCode: string; name: string; isPrimary: boolean; note: string | null }[];
+  prescriptionItems: MedicalRecordItem['prescriptionItems'];
+  clinicalImages: {
+    id: string;
+    type: ClinicalImageType;
+    secureUrl: string;
+    description: string | null;
+    takenAt: string | null;
+  }[];
+}
