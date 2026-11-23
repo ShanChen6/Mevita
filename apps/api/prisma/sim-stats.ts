@@ -181,7 +181,8 @@ async function generate(prisma: PrismaClient) {
         type: 'PROVINCIAL_GENERAL_HOSPITAL',
         level: 'BASIC',
         communeCode: communes[0].code,
-        acceptsReferrals: true,
+        // Chỉ phục vụ số liệu thống kê — không xuất hiện trong danh sách nhận chuyển tuyến khi demo
+        acceptsReferrals: false,
       });
       hospitalDoctor = randomUUID();
       users.push({

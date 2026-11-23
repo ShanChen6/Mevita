@@ -74,6 +74,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 | `pnpm db:studio`                                    | Mở Prisma Studio                                          |
 | `pnpm --filter @mevita/api icd10:import <file.csv>` | Nhập bảng ICD-10 chính thức                               |
 | `pnpm --filter @mevita/api sim:stats [--clear]`     | Tạo / xoá dữ liệu giả lập 180 ngày cho thống kê           |
+| `pnpm --filter @mevita/api demo:reset`              | Dựng lại kịch bản demo ([chi tiết](docs/demo-data.md))    |
 | `pnpm --filter @mevita/api test:e2e`                | E2E API, gồm kiểm thử bảo mật (cần DB đã seed)            |
 | `pnpm --filter @mevita/api load:socket -- …`        | Kiểm thử chịu tải Socket.io ([chi tiết](docs/testing.md)) |
 
@@ -94,6 +95,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 - [Xe chuyển viện & theo dõi vị trí](docs/transport.md)
 - [Điều phối thay cho từ chối: năng lực, gợi ý, leo thang](docs/coordination.md)
 - [Hành trình nhiều chặng Xã → Tỉnh → Trung ương](docs/journey.md)
+- [Dữ liệu mẫu & kịch bản demo](docs/demo-data.md)
 - [Thống kê & quản trị](docs/stats-admin.md)
 - [Kiểm thử bảo mật & chịu tải](docs/testing.md)
 - [Triển khai lên Internet (Neon · Render · Vercel)](docs/deployment.md)

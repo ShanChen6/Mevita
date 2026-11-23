@@ -113,7 +113,7 @@
   - Deploy PostgreSQL lên **Supabase** hoặc **Neon**.
   - Deploy Backend NestJS (hỗ trợ WebSockets) lên **Render** hoặc **Railway**.
   - Deploy Frontend Next.js lên **Vercel**.
-- [ ] **Task 6.2: Tạo bộ Dữ liệu mẫu thực tế (Database Seeding)**
+- [x] **Task 6.2: Tạo bộ Dữ liệu mẫu thực tế (Database Seeding)**
   - Import đầy đủ **34 Tỉnh/Thành và 3.321 Xã/Phường**.
   - Tạo sẵn kịch bản dữ liệu mẫu sinh động: VD *Trạm Y tế Xã Mường Khương (Tỉnh Lào Cai)* chuyển tuyến khẩn cấp bệnh nhân chấn thương sọ não lên *Bệnh viện Đa khoa Tỉnh Lào Cai*, hoặc chuyển liên tỉnh về *Bệnh viện Việt Đức (TP. Hà Nội)*.
 - [ ] **Task 6.3: Viết Tài liệu & Diễn tập Demo**

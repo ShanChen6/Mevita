@@ -1,11 +1,12 @@
 /**
  * Tài khoản & cơ sở y tế DEMO cho môi trường phát triển. Ở production chỉ chạy khi bật rõ ràng
  * `SEED_DEMO=true` và đặt `SEED_DEMO_PASSWORD` riêng (bản demo trực tuyến cho buổi bảo vệ).
- * Kịch bản: Trạm Y tế Xã Mường Khương (Lào Cai) → BVĐK Tỉnh Lào Cai → BV Hữu nghị Việt Đức (Hà Nội).
- * Bộ dữ liệu mẫu đầy đủ cho buổi bảo vệ sẽ làm ở Task 6.2.
+ * Mạng lưới: 2 trạm y tế xã (Mường Khương, Bát Xát — Lào Cai) → BVĐK Tỉnh Lào Cai → BV Việt Đức, BV Bạch Mai
+ * (Hà Nội). Các ca bệnh kịch bản (Task 6.2) nằm ở `demo-scenarios.ts`.
  */
 import { hashPassword } from '../../src/auth/password.js';
 import { computeRecordSignature } from '../../src/medical-records/signature.js';
+import { seedDemoScenarios } from './demo-scenarios.js';
 import type {
   FacilityLevel,
   FacilityType,
@@ -112,6 +113,30 @@ const facilities: {
     longitude: 105.8472,
     specialties: ['EMERGENCY_ICU', 'NEUROSURGERY', 'ORTHOPEDICS_TRAUMA', 'GENERAL_SURGERY'],
   },
+  {
+    code: 'DEMO-TYT-02683',
+    name: 'Trạm Y tế Xã Bát Xát',
+    type: 'COMMUNE_HEALTH_STATION',
+    level: 'PRIMARY',
+    communeCode: '02683',
+    acceptsReferrals: false,
+    emergencyPhone: '0900 444 115',
+    latitude: 22.5383,
+    longitude: 103.8889,
+    specialties: ['GENERAL_INTERNAL', 'FAMILY_MEDICINE'],
+  },
+  {
+    code: 'DEMO-BV-BACHMAI',
+    name: 'Bệnh viện Bạch Mai',
+    type: 'CENTRAL_HOSPITAL',
+    level: 'SPECIALIZED',
+    communeCode: '00292', // Phường Bạch Mai, Hà Nội
+    acceptsReferrals: true,
+    emergencyPhone: '0900 555 115',
+    latitude: 21.001,
+    longitude: 105.841,
+    specialties: ['EMERGENCY_ICU', 'CARDIOLOGY', 'NEUROLOGY', 'PULMONOLOGY', 'GENERAL_INTERNAL'],
+  },
 ];
 
 const staff: {
@@ -173,6 +198,26 @@ const staff: {
     position: 'DOCTOR',
     specialty: 'NEUROSURGERY',
     academicTitle: 'TS.BS',
+  },
+  {
+    email: 'bs.lan@mevita.vn',
+    phone: '0900000007',
+    fullName: 'Phạm Thị Lan',
+    role: 'COMMUNE_STAFF',
+    facilityCode: 'DEMO-TYT-02683',
+    position: 'DOCTOR',
+    specialty: 'GENERAL_INTERNAL',
+    academicTitle: 'BS',
+  },
+  {
+    email: 'bs.hai@mevita.vn',
+    phone: '0900000008',
+    fullName: 'Đỗ Thanh Hải',
+    role: 'PROVINCE_STAFF',
+    facilityCode: 'DEMO-BV-BACHMAI',
+    position: 'DOCTOR',
+    specialty: 'CARDIOLOGY',
+    academicTitle: 'PGS.TS',
   },
 ];
 
@@ -239,6 +284,8 @@ export async function seedDemo(prisma: PrismaClient) {
   > = {
     'DEMO-BVDK-15': { erBedsTotal: 24, erBedsAvailable: 6, icuBedsAvailable: 2 },
     'DEMO-BV-VIETDUC': { erBedsTotal: 60, erBedsAvailable: 14, icuBedsAvailable: 4 },
+    // Tuyến cuối quá tải thường xuyên — vẫn được xếp hạng, không bị loại (Task B)
+    'DEMO-BV-BACHMAI': { erBedsTotal: 80, erBedsAvailable: 4, icuBedsAvailable: 1 },
   };
   for (const [code, c] of Object.entries(capacity))
     await prisma.healthFacility.update({
@@ -315,8 +362,9 @@ export async function seedDemo(prisma: PrismaClient) {
   });
 
   const records = await seedDemoHistory(prisma, facilityIds, specialtyIds);
+  const scenarios = await seedDemoScenarios(prisma);
   console.log(
-    `✔ Demo: ${facilities.length} cơ sở y tế, ${staff.length + 1} tài khoản (mật khẩu: SEED_DEMO_PASSWORD), ${records} hồ sơ khám`,
+    `✔ Demo: ${facilities.length} cơ sở y tế, ${staff.length + 1} tài khoản (mật khẩu: SEED_DEMO_PASSWORD), ${records} hồ sơ khám; kịch bản: ${scenarios}`,
   );
 }
 

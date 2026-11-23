@@ -13,6 +13,10 @@ on:
         description: 'Tạo kịch bản DEMO (tài khoản demo, cơ sở y tế, hồ sơ mẫu)'
         type: boolean
         default: false
+      demo_reset:
+        description: 'Dựng lại dữ liệu DEMO trước buổi bảo vệ (xoá dữ liệu diễn tập, mốc giờ tính từ lúc chạy)'
+        type: boolean
+        default: false
 
 jobs:
   migrate:
@@ -40,3 +44,9 @@ jobs:
           SEED_DEMO: 'true'
           SEED_DEMO_PASSWORD: ${{ secrets.SEED_DEMO_PASSWORD }}
         run: pnpm db:seed
+      - name: Dựng lại demo
+        if: ${{ inputs.demo_reset }}
+        env:
+          SEED_DEMO: 'true'
+          SEED_DEMO_PASSWORD: ${{ secrets.SEED_DEMO_PASSWORD }}
+        run: pnpm --filter @mevita/api demo:reset
