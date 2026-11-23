@@ -1,0 +1,350 @@
+/**
+ * Lệnh chuyển tuyến khẩn cấp (Task 4.2): lưu phiếu + cảnh báo realtime tới bệnh viện đích.
+ */
+import type { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import { io, type Socket } from 'socket.io-client';
+import request from 'supertest';
+import type { App } from 'supertest/types.js';
+import { AppModule } from '../src/app.module.js';
+import { hashPassword } from '../src/auth/password.js';
+import { PrismaService } from '../src/prisma/prisma.service.js';
+import { RealtimeIoAdapter } from '../src/realtime/realtime-io.adapter.js';
+
+const PASSWORD = 'TestPass123';
+const tag = `rf${Date.now().toString(36)}`;
+
+interface Alert {
+  id: string;
+  code: string;
+  priority: string;
+  patient: { fullName: string; allergies: string | null };
+  diagnosis: { icdCode: string } | null;
+  fromFacility: { name: string };
+  referredBy: string;
+}
+
+describe('Chuyển tuyến khẩn cấp (e2e)', () => {
+  let app: INestApplication<App>;
+  let prisma: PrismaService;
+  let url = '';
+  let dbReady = false;
+  const ids = { users: [] as string[], patients: [] as string[], facilities: [] as string[] };
+  const access = {} as Record<'commune' | 'nurse' | 'hospital' | 'central' | 'other', string>;
+  const fac = {} as Record<'station' | 'hospital' | 'central' | 'otherStation', string>;
+  let patientId = '';
+  let recordId = '';
+  let nurseId = '';
+  const sockets: Socket[] = [];
+
+  const http = () => request(app.getHttpServer());
+  const as = (who: keyof typeof access) => ({ Authorization: `Bearer ${access[who]}` });
+  const connect = async (who: keyof typeof access) => {
+    const t = (
+      (await http().post('/api/realtime/ticket').set(as(who)).expect(200)).body as {
+        ticket: string;
+      }
+    ).ticket;
+    return new Promise<Socket>((resolve, reject) => {
+      const s = io(`${url}/realtime`, {
+        auth: { token: t },
+        transports: ['websocket'],
+        reconnection: false,
+        forceNew: true,
+      });
+      sockets.push(s);
+      s.on('connect', () => resolve(s));
+      s.on('connect_error', reject);
+    });
+  };
+  const next = <T>(s: Socket, event: string) =>
+    new Promise<T>((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error(`timeout ${event}`)), 2000);
+      s.once(event, (d: T) => (clearTimeout(t), resolve(d)));
+    });
+  const body = (overrides: Record<string, unknown> = {}) => ({
+    sourceRecordId: recordId,
+    toFacilityId: fac.hospital,
+    priority: 'CRITICAL',
+    reason: 'Nghi máu tụ nội sọ, vượt khả năng chuyên môn tuyến xã',
+    clinicalSummary: 'Nam 36 tuổi, TNGT, lơ mơ, GCS 12, đồng tử 2 bên 3mm',
+    initialTreatment: 'Cố định cột sống cổ, thở oxy 5 lít/phút',
+    escortId: nurseId,
+    vehicleInfo: 'Xe cứu thương 24A-123.45',
+    etaMinutes: 45,
+    ...overrides,
+  });
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    app.useWebSocketAdapter(new RealtimeIoAdapter(app));
+    await app.listen(0);
+    url = (await app.getUrl()).replace('[::1]', 'localhost');
+    prisma = app.get(PrismaService);
+    dbReady =
+      (await prisma.isHealthy()) &&
+      (await prisma.icd10Code.count({ where: { code: 'S06.5' } })) === 1;
+    if (!dbReady)
+      return console.warn('⚠️  Bỏ qua e2e chuyển tuyến: DB chưa sẵn sàng hoặc chưa seed ICD-10.');
+
+    const mkFacility = (
+      k: string,
+      communeCode: string,
+      type: 'COMMUNE_HEALTH_STATION' | 'PROVINCIAL_GENERAL_HOSPITAL' | 'CENTRAL_HOSPITAL',
+      acceptsReferrals: boolean,
+    ) =>
+      prisma.healthFacility.create({
+        data: {
+          code: `E${k.slice(0, 4)}-${tag}`,
+          name: `${k} ${tag}`,
+          type,
+          level: acceptsReferrals ? 'BASIC' : 'PRIMARY',
+          communeCode,
+          acceptsReferrals,
+        },
+      });
+    const [station, hospital, central, otherStation] = await Promise.all([
+      mkFacility('Tram', '02761', 'COMMUNE_HEALTH_STATION', false), // Lào Cai
+      mkFacility('BVTinh', '02647', 'PROVINCIAL_GENERAL_HOSPITAL', true), // Lào Cai
+      mkFacility('BVTW', '00082', 'CENTRAL_HOSPITAL', true), // Hà Nội
+      mkFacility('Khac', '02761', 'COMMUNE_HEALTH_STATION', false),
+    ]);
+    Object.assign(fac, {
+      station: station.id,
+      hospital: hospital.id,
+      central: central.id,
+      otherStation: otherStation.id,
+    });
+    ids.facilities.push(station.id, hospital.id, central.id, otherStation.id);
+
+    const passwordHash = await hashPassword(PASSWORD);
+    const staff = (
+      k: string,
+      facilityId: string,
+      role: 'COMMUNE_STAFF' | 'PROVINCE_STAFF',
+      position: 'DOCTOR' | 'NURSE' = 'DOCTOR',
+    ) =>
+      prisma.user.create({
+        data: {
+          email: `${k}-${tag}@e2e.test`,
+          passwordHash,
+          fullName: `NV ${k}`,
+          role,
+          staffProfile: {
+            create: { facilityId, position, academicTitle: position === 'DOCTOR' ? 'BS' : 'ĐD' },
+          },
+        },
+      });
+    const users = await Promise.all([
+      staff('commune', station.id, 'COMMUNE_STAFF'),
+      staff('nurse', station.id, 'COMMUNE_STAFF', 'NURSE'),
+      staff('hospital', hospital.id, 'PROVINCE_STAFF'),
+      staff('central', central.id, 'PROVINCE_STAFF'),
+      staff('other', otherStation.id, 'COMMUNE_STAFF'),
+    ]);
+    ids.users.push(...users.map((u) => u.id));
+    nurseId = users[1].id;
+    const patient = await prisma.patient.create({
+      data: {
+        fullName: `Lò Văn ${tag}`,
+        dateOfBirth: new Date('1990-05-01'),
+        gender: 'MALE',
+        allergies: 'Penicillin',
+        bloodType: 'O_POSITIVE',
+      },
+    });
+    patientId = patient.id;
+    ids.patients.push(patientId);
+    recordId = (
+      await prisma.medicalRecord.create({
+        data: {
+          code: `E2E-${tag}`,
+          patientId,
+          doctorId: users[0].id,
+          facilityId: station.id,
+          encounterType: 'EMERGENCY',
+          chiefComplaint: 'Chấn thương đầu',
+          pulse: 110,
+          spo2: 93,
+          diagnoses: { create: { icdCode: 'S06.5', isPrimary: true } },
+        },
+      })
+    ).id;
+    for (const k of ['commune', 'nurse', 'hospital', 'central', 'other'] as const) {
+      access[k] = (
+        (
+          await http()
+            .post('/api/auth/login')
+            .send({ identifier: `${k}-${tag}@e2e.test`, password: PASSWORD })
+            .expect(200)
+        ).body as {
+          accessToken: string;
+        }
+      ).accessToken;
+    }
+  });
+
+  afterEach(() => {
+    while (sockets.length) sockets.pop()!.disconnect();
+  });
+
+  afterAll(async () => {
+    if (dbReady) {
+      await prisma.auditLog.deleteMany({ where: { userId: { in: ids.users } } });
+      await prisma.referral.deleteMany({ where: { patientId: { in: ids.patients } } });
+      await prisma.medicalRecord.deleteMany({ where: { patientId: { in: ids.patients } } });
+      await prisma.patient.deleteMany({ where: { id: { in: ids.patients } } });
+      await prisma.user.deleteMany({ where: { id: { in: ids.users } } });
+      await prisma.healthFacility.deleteMany({ where: { id: { in: ids.facilities } } });
+    }
+    await app.close();
+  });
+
+  it('danh sách bệnh viện đích: trong tỉnh trước, liên tỉnh sau, kèm số bác sĩ đang trực', async (ctx) => {
+    if (!dbReady) return ctx.skip();
+    await connect('hospital');
+    const list = (await http().get('/api/referrals/destinations').set(as('commune')).expect(200))
+      .body as {
+      id: string;
+      sameProvince: boolean;
+      onDutyCount: number;
+    }[];
+    const mine = list.filter((f) => f.id === fac.hospital || f.id === fac.central);
+    expect(mine.map((f) => [f.id, f.sameProvince, f.onDutyCount])).toEqual([
+      [fac.hospital, true, 1],
+      [fac.central, false, 0],
+    ]);
+    expect(list.findIndex((f) => f.id === fac.hospital)).toBeLessThan(
+      list.findIndex((f) => f.id === fac.central),
+    );
+    expect(list.map((f) => f.id)).not.toContain(fac.station);
+    const escorts = (await http().get('/api/referrals/escorts').set(as('commune')).expect(200))
+      .body as { id: string }[];
+    expect(escorts.map((e) => e.id)).toContain(nurseId);
+  });
+
+  it('gửi lệnh: lưu phiếu và bác sĩ đang trực nhận new_incoming_referral ngay', async (ctx) => {
+    if (!dbReady) return ctx.skip();
+    const hospitalDoc = await connect('hospital');
+    const centralDoc = await connect('central');
+    const alert = next<Alert>(hospitalDoc, 'new_incoming_referral');
+    let centralGot = false;
+    centralDoc.once('new_incoming_referral', () => (centralGot = true));
+
+    const started = Date.now();
+    const res = await http().post('/api/referrals').set(as('commune')).send(body()).expect(201);
+    const { referral, delivered } = res.body as {
+      referral: {
+        id: string;
+        code: string;
+        status: string;
+        interProvincial: boolean;
+        estimatedArrivalAt: string;
+      };
+      delivered: number;
+    };
+    expect(delivered).toBe(1);
+    expect(referral).toMatchObject({ status: 'PENDING', interProvincial: false });
+    expect(new Date(referral.estimatedArrivalAt).getTime() - started).toBeGreaterThan(44 * 60_000);
+
+    const got = await alert;
+    expect(Date.now() - started).toBeLessThan(1000);
+    expect(got).toMatchObject({
+      id: referral.id,
+      priority: 'CRITICAL',
+      patient: { allergies: 'Penicillin' },
+      diagnosis: { icdCode: 'S06.5' },
+      referredBy: 'BS. NV commune',
+    });
+    await new Promise((r) => setTimeout(r, 200));
+    expect(centralGot).toBe(false);
+
+    // Không tạo phiếu thứ hai khi phiếu trước còn hiệu lực
+    await http().post('/api/referrals').set(as('commune')).send(body()).expect(409);
+
+    // Bệnh viện nhận: xem chi tiết & hồ sơ bệnh nhân; cơ sở không liên quan: 404
+    const detail = (
+      await http().get(`/api/referrals/${referral.id}`).set(as('hospital')).expect(200)
+    ).body as {
+      sourceRecord: { pulse: number; diagnoses: { icdCode: string }[] };
+      escort: { name: string };
+    };
+    expect(detail).toMatchObject({
+      sourceRecord: { pulse: 110, diagnoses: [{ icdCode: 'S06.5' }] },
+      escort: { name: 'ĐD. NV nurse' },
+    });
+    await http().get(`/api/referrals/${referral.id}`).set(as('other')).expect(404);
+    await http().get(`/api/patients/${patientId}`).set(as('hospital')).expect(200);
+
+    const incoming = (
+      await http()
+        .get('/api/referrals?direction=incoming&active=true')
+        .set(as('hospital'))
+        .expect(200)
+    ).body as { id: string }[];
+    expect(incoming.map((r) => r.id)).toContain(referral.id);
+    const outgoing = (
+      await http().get('/api/referrals?direction=outgoing').set(as('commune')).expect(200)
+    ).body as { id: string }[];
+    expect(outgoing.map((r) => r.id)).toContain(referral.id);
+
+    // Huỷ → bệnh viện nhận referral_updated
+    const updated = next<{ id: string; status: string }>(hospitalDoc, 'referral_updated');
+    await http()
+      .post(`/api/referrals/${referral.id}/cancel`)
+      .set(as('hospital'))
+      .send({ reason: 'Nhầm' })
+      .expect(404);
+    await http()
+      .post(`/api/referrals/${referral.id}/cancel`)
+      .set(as('commune'))
+      .send({ reason: 'Bệnh nhân ổn định' })
+      .expect(200);
+    expect(await updated).toMatchObject({ id: referral.id, status: 'CANCELLED' });
+    await http()
+      .post(`/api/referrals/${referral.id}/cancel`)
+      .set(as('commune'))
+      .send({ reason: 'x lần nữa' })
+      .expect(409);
+  });
+
+  it('liên tỉnh khi không ai trực: vẫn lưu phiếu, delivered = 0 (giao diện nhắc gọi đường dây nóng)', async (ctx) => {
+    if (!dbReady) return ctx.skip();
+    const res = await http()
+      .post('/api/referrals')
+      .set(as('commune'))
+      .send(body({ toFacilityId: fac.central }))
+      .expect(201);
+    expect(res.body).toMatchObject({
+      delivered: 0,
+      referral: { interProvincial: true, status: 'PENDING' },
+    });
+  });
+
+  it('từ chối dữ liệu không hợp lệ và người không có quyền', async (ctx) => {
+    if (!dbReady) return ctx.skip();
+    await http()
+      .post('/api/referrals')
+      .set(as('commune'))
+      .send(body({ toFacilityId: fac.otherStation }))
+      .expect(400); // trạm không nhận chuyển tuyến
+    await http()
+      .post('/api/referrals')
+      .set(as('commune'))
+      .send(body({ escortId: ids.users[2] }))
+      .expect(400); // người đi kèm không thuộc trạm
+    await http()
+      .post('/api/referrals')
+      .set(as('commune'))
+      .send(body({ etaMinutes: 2 }))
+      .expect(400);
+    await http()
+      .post('/api/referrals')
+      .set(as('commune'))
+      .send(body({ priority: 'X' }))
+      .expect(400);
+    await http().post('/api/referrals').set(as('other')).send(body()).expect(404); // hồ sơ không thuộc cơ sở
+  });
+});

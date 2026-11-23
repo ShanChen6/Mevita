@@ -6,19 +6,27 @@ import { Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
- * Đếm ngược thời gian xe dự kiến tới nơi.
- * Wireframe: tính từ lúc mở trang + `minutes`. Bản thật dùng `estimatedArrivalAt` từ API (Task 4.4).
+ * Đếm ngược thời gian xe dự kiến tới nơi: theo mốc `until` (ISO, từ API) hoặc `minutes` tính từ lúc mở
+ * trang (màn hình mẫu).
  */
-export function EtaCountdown({ minutes, className }: { minutes: number; className?: string }) {
+export function EtaCountdown({
+  minutes,
+  until,
+  className,
+}: {
+  minutes?: number;
+  until?: string | null;
+  className?: string;
+}) {
   const [remaining, setRemaining] = useState<number | null>(null);
 
   useEffect(() => {
-    const target = Date.now() + minutes * 60_000;
+    const target = until ? new Date(until).getTime() : Date.now() + (minutes ?? 0) * 60_000;
     const tick = () => setRemaining(Math.max(0, Math.round((target - Date.now()) / 1000)));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [minutes]);
+  }, [minutes, until]);
 
   const mm = remaining === null ? '--' : String(Math.floor(remaining / 60)).padStart(2, '0');
   const ss = remaining === null ? '--' : String(remaining % 60).padStart(2, '0');

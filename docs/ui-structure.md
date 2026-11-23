@@ -26,18 +26,18 @@ src/app/
 |            | `/commune/appointments`     | Tiếp đón: duyệt / huỷ / tạo phiếu khám                      | 2.3      |
 |            | `/commune/patients`         | Tra cứu nhanh theo CCCD / BHYT / mã lịch hẹn                | 3.1      |
 |            | `/commune/encounters/new`   | Phiếu khám: sinh tồn, ICD-10, đơn thuốc, ảnh, ký            | 3.2, 3.3 |
-|            | `/commune/referrals`        | Danh sách ca đã chuyển tuyến                                | 4.2      |
-|            | `/commune/referrals/new`    | Lệnh chuyển tuyến khẩn cấp                                  | 4.2      |
+|            | `/commune/referrals`        | Ca đã chuyển tuyến, huỷ lệnh, chi tiết `/[id]`              | 4.2      |
+|            | `/commune/referrals/new`    | Lệnh chuyển tuyến khẩn cấp (`?record=` từ phiếu khám)       | 4.2      |
 |            | `/escort/[referralId]`      | Cập nhật sinh tồn trên xe (mobile, offline-first)           | 4.3      |
-| Tuyến Tỉnh | `/province`                 | Trung tâm điều phối cấp cứu                                 | 4.4      |
-|            | `/province/referrals`       | Danh sách ca chuyển tuyến tới                               | 4.4      |
-|            | `/province/referrals/[id]`  | Chi tiết ca: biểu đồ sinh tồn, đếm ngược, xác nhận ê-kíp    | 4.4      |
+| Tuyến Tỉnh | `/province`                 | Trung tâm điều phối: ca đang tới, cập nhật realtime         | 4.2, 4.4 |
+|            | `/province/referrals`       | Ca chuyển tuyến tới & ca bệnh viện chuyển đi (liên tỉnh)    | 4.2      |
+|            | `/province/referrals/[id]`  | Chi tiết ca, đếm ngược; xác nhận ê-kíp & biểu đồ sinh tồn   | 4.2, 4.4 |
 |            | `/province/appointments`    | Lịch hẹn khám chuyên khoa                                   | 2.3      |
 |            | `/province/records`         | Hồ sơ điều trị tiếp nối                                     | 5.1      |
 
 ## Ghi chú
 
-- Đăng nhập/đăng ký (Task 2.1) và cổng bệnh nhân (Task 2.2), đặt lịch và tiếp đón lịch hẹn ở cả 2 tuyến (Task 2.3), tra cứu bệnh nhân (Task 3.1), khám bệnh & ký hồ sơ (Task 3.2), ảnh cận lâm sàng (Task 3.3) đã dùng **dữ liệu thật**. Các màn hình còn lại dùng **dữ liệu mẫu** trong `src/lib/mock-data.ts` (kịch bản Mường Khương → BVĐK Lào Cai) và gắn nhãn "Wireframe" chỉ rõ task sẽ hoàn thiện.
+- Đăng nhập/đăng ký (Task 2.1) và cổng bệnh nhân (Task 2.2), đặt lịch và tiếp đón lịch hẹn ở cả 2 tuyến (Task 2.3), tra cứu bệnh nhân (Task 3.1), khám bệnh & ký hồ sơ (Task 3.2), ảnh cận lâm sàng (Task 3.3), lệnh chuyển tuyến & bảng điều phối (Task 4.2) đã dùng **dữ liệu thật**. Các màn hình còn lại dùng **dữ liệu mẫu** trong `src/lib/mock-data.ts` (kịch bản Mường Khương → BVĐK Lào Cai) và gắn nhãn "Wireframe" chỉ rõ task sẽ hoàn thiện.
 - Nhãn tiếng Việt của các enum (trạng thái lịch hẹn, mức độ ưu tiên…) nằm ở `src/lib/labels.ts`, bám theo Prisma schema.
 - Thời gian hiển thị theo múi giờ `Asia/Ho_Chi_Minh` (`src/lib/format.ts`).
 - Bảo vệ route theo vai trò: xem [docs/auth.md](auth.md).

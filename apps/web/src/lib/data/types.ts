@@ -283,3 +283,115 @@ export interface MedicalRecordDetail {
   prescriptionItems: MedicalRecordItem['prescriptionItems'];
   clinicalImages: ClinicalImage[];
 }
+
+export type ReferralPriorityValue = 'CRITICAL' | 'URGENT' | 'ROUTINE';
+export type ReferralStatusValue = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'ARRIVED' | 'CANCELLED';
+
+export interface ReferralFacility {
+  id: string;
+  name: string;
+  type: FacilityType;
+  phone: string | null;
+  emergencyPhone: string | null;
+  commune: { fullName: string; province: { code: string; fullName: string } };
+}
+
+export interface ReferralDestination extends ReferralFacility {
+  level: 'PRIMARY' | 'BASIC' | 'SPECIALIZED';
+  specialties: { code: string; name: string }[];
+  sameProvince: boolean;
+  onDutyCount: number;
+}
+
+export interface StaffOption {
+  id: string;
+  fullName: string;
+  academicTitle: string | null;
+  position: string;
+}
+
+export interface Referral {
+  id: string;
+  code: string;
+  priority: ReferralPriorityValue;
+  status: ReferralStatusValue;
+  reason: string;
+  clinicalSummary: string;
+  initialTreatment: string | null;
+  vehicleInfo: string | null;
+  departedAt: string | null;
+  estimatedArrivalAt: string | null;
+  acceptedAt: string | null;
+  preparationNote: string | null;
+  rejectionReason: string | null;
+  arrivedAt: string | null;
+  cancelledAt: string | null;
+  cancellationReason: string | null;
+  createdAt: string;
+  interProvincial: boolean;
+  vitalLogCount: number;
+  fromFacility: ReferralFacility;
+  toFacility: ReferralFacility;
+  referredBy: { id: string; name: string; phone: string | null };
+  escort: { id: string; name: string; phone: string | null } | null;
+  acceptedBy: { id: string; name: string } | null;
+  patient: {
+    id: string;
+    fullName: string;
+    dateOfBirth: string;
+    gender: Gender;
+    bloodType: BloodType;
+    allergies: string | null;
+    chronicConditions: string | null;
+    nationalId: string | null;
+    healthInsuranceNumber: string | null;
+    emergencyContactName: string | null;
+    emergencyContactPhone: string | null;
+  };
+  sourceRecord: {
+    id: string;
+    code: string;
+    status: 'DRAFT' | 'FINALIZED';
+    encounterType: EncounterType;
+    visitAt: string;
+    chiefComplaint: string;
+    symptoms: string | null;
+    physicalExamination: string | null;
+    pulse: number | null;
+    temperature: number | null;
+    systolicBp: number | null;
+    diastolicBp: number | null;
+    respiratoryRate: number | null;
+    spo2: number | null;
+    diagnosisNote: string | null;
+    diagnoses: { icdCode: string; name: string; isPrimary: boolean }[];
+    prescriptionItems: {
+      drugName: string;
+      strength: string | null;
+      quantity: number;
+      unit: string;
+      instructions: string;
+    }[];
+    imageCount: number;
+  };
+}
+
+/** Nội dung cảnh báo realtime `new_incoming_referral` */
+export interface IncomingReferralAlert {
+  id: string;
+  code: string;
+  priority: ReferralPriorityValue;
+  createdAt: string;
+  estimatedArrivalAt: string | null;
+  reason: string;
+  patient: {
+    fullName: string;
+    dateOfBirth: string;
+    gender: Gender;
+    allergies: string | null;
+    bloodType: BloodType;
+  };
+  diagnosis: { icdCode: string; name: string } | null;
+  fromFacility: { name: string; province: string };
+  referredBy: string | null;
+}

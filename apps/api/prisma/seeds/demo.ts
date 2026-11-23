@@ -26,6 +26,8 @@ const facilities: {
   level: FacilityLevel;
   communeCode: string;
   acceptsReferrals: boolean;
+  /** Số giả lập cho demo */
+  emergencyPhone: string;
   specialties: string[];
 }[] = [
   {
@@ -35,6 +37,7 @@ const facilities: {
     level: 'PRIMARY',
     communeCode: '02761',
     acceptsReferrals: false,
+    emergencyPhone: '0900 333 115',
     specialties: ['GENERAL_INTERNAL', 'PEDIATRICS', 'FAMILY_MEDICINE'],
   },
   {
@@ -44,6 +47,7 @@ const facilities: {
     level: 'BASIC',
     communeCode: '02647', // Phường Lào Cai
     acceptsReferrals: true,
+    emergencyPhone: '0900 111 115',
     specialties: ['EMERGENCY_ICU', 'GENERAL_SURGERY', 'NEUROSURGERY', 'CARDIOLOGY', 'PEDIATRICS'],
   },
   {
@@ -53,6 +57,7 @@ const facilities: {
     level: 'SPECIALIZED',
     communeCode: '00082', // Phường Cửa Nam, Hà Nội
     acceptsReferrals: true,
+    emergencyPhone: '0900 222 115',
     specialties: ['EMERGENCY_ICU', 'NEUROSURGERY', 'ORTHOPEDICS_TRAUMA', 'GENERAL_SURGERY'],
   },
 ];
@@ -153,6 +158,7 @@ export async function seedDemo(prisma: PrismaClient) {
         level: f.level,
         communeCode: f.communeCode,
         acceptsReferrals: f.acceptsReferrals,
+        emergencyPhone: f.emergencyPhone,
       },
     });
     facilityIds.set(f.code, facility.id);

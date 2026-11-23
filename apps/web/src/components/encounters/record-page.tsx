@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { ArrowLeft, History, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Ambulance, ArrowLeft, History, ShieldAlert, ShieldCheck } from 'lucide-react';
 
 import { RecordCard } from '@/components/patient/record-card';
 import { PageHeader } from '@/components/shared/page-header';
@@ -66,6 +66,11 @@ async function Record({
         .join(' · ')}
       actions={
         <>
+          <Button variant="destructive" asChild>
+            <Link href={`/${portal}/referrals/new?record=${record.id}`}>
+              <Ambulance /> Chuyển tuyến khẩn cấp
+            </Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link href={`/${portal}/patients/${p.id}`}>
               <History /> Lịch sử khám

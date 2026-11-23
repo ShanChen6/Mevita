@@ -6,6 +6,8 @@ export const RealtimeEvent = {
   ChannelTest: 'channel_test',
   /** Ca chuyển tuyến mới tới cơ sở (Task 4.2) */
   NewIncomingReferral: 'new_incoming_referral',
+  /** Phiếu chuyển tuyến đổi trạng thái: huỷ, tiếp nhận, đã tới… */
+  ReferralUpdated: 'referral_updated',
   /** Chỉ số sinh tồn mới trên xe (Task 4.3) */
   VitalUpdate: 'vital_update',
 } as const;
