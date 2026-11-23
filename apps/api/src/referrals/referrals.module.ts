@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
+import { ClinicalImagesModule } from '../clinical-images/clinical-images.module.js';
 import { ReferralVitalsGateway } from './referral-vitals.gateway.js';
 import { ReferralVitalsService } from './referral-vitals.service.js';
 import { ReferralsController } from './referrals.controller.js';
 import { ReferralsService } from './referrals.service.js';
 
 @Module({
+  imports: [ClinicalImagesModule],
   controllers: [ReferralsController],
   providers: [ReferralsService, ReferralVitalsService, ReferralVitalsGateway],
   exports: [ReferralsService, ReferralVitalsService],

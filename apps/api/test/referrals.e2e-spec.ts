@@ -487,4 +487,151 @@ describe('Chuyển tuyến khẩn cấp (e2e)', () => {
       });
     });
   });
+
+  describe('phản hồi của tuyến trên (Task 4.4)', () => {
+    interface Update {
+      id: string;
+      status: string;
+      side: 'incoming' | 'outgoing';
+      preparationNote: string | null;
+      rejectionReason: string | null;
+      by: string;
+    }
+    const newRecord = async (k: string) =>
+      (
+        await prisma.medicalRecord.create({
+          data: {
+            code: `E2E-${tag}-${k}`,
+            patientId,
+            doctorId: ids.users[0],
+            facilityId: fac.station,
+            encounterType: 'EMERGENCY',
+            chiefComplaint: 'Chấn thương ngực',
+          },
+        })
+      ).id;
+    const send = async (sourceRecordId: string) =>
+      (
+        (
+          await http()
+            .post('/api/referrals')
+            .set(as('commune'))
+            .send(body({ sourceRecordId }))
+            .expect(201)
+        ).body as { referral: { id: string } }
+      ).referral.id;
+
+    it('xác nhận tiếp nhận & sẵn sàng ê-kíp → tuyến xã và người đi kèm nhận phản hồi ngay', async (ctx) => {
+      if (!dbReady) return ctx.skip();
+      const recId = await newRecord('A');
+      await prisma.clinicalImage.create({
+        data: {
+          medicalRecordId: recId,
+          type: 'XRAY',
+          cloudinaryPublicId: `e2e/${tag}/chest`,
+          secureUrl: 'https://res.cloudinary.com/demo/image/upload/v1/e2e/chest.jpg',
+          uploadedById: ids.users[0],
+        },
+      });
+      const id = await send(recId);
+
+      // Bác sĩ trực xem đủ hồ sơ kèm ảnh cận lâm sàng (URL có chữ ký)
+      const detail = (await http().get(`/api/referrals/${id}`).set(as('hospital')).expect(200))
+        .body as {
+        sourceImages: { type: string; thumbnailUrl: string }[];
+      };
+      expect(detail.sourceImages).toHaveLength(1);
+      expect(detail.sourceImages[0]?.thumbnailUrl).toMatch(/sig=/);
+
+      const commune = await connect('commune');
+      const nurse = await connect('nurse');
+      const hospital = await connect('hospital');
+      const toCommune = next<Update>(commune, 'referral_updated');
+      const toNurse = next<Update>(nurse, 'referral_updated');
+      const toHospital = next<Update>(hospital, 'referral_updated');
+      const note = 'Đã chuẩn bị phòng mổ số 2, dự trù 2 đơn vị máu O';
+      const t0 = Date.now();
+      const res = await http()
+        .post(`/api/referrals/${id}/accept`)
+        .set(as('hospital'))
+        .send({ preparationNote: note })
+        .expect(200);
+      expect(res.body).toMatchObject({
+        status: 'ACCEPTED',
+        preparationNote: note,
+        acceptedBy: { name: 'BS. NV hospital' },
+      });
+      const ev = await toCommune;
+      expect(Date.now() - t0).toBeLessThan(1000);
+      expect(ev).toMatchObject({
+        id,
+        status: 'ACCEPTED',
+        side: 'outgoing',
+        preparationNote: note,
+        by: 'BS. NV hospital',
+      });
+      expect(await toNurse).toMatchObject({ side: 'outgoing' });
+      expect(await toHospital).toMatchObject({ side: 'incoming', status: 'ACCEPTED' });
+
+      // Chỉ xác nhận một lần; đã tiếp nhận thì không từ chối được
+      await http().post(`/api/referrals/${id}/accept`).set(as('hospital')).send({}).expect(409);
+      await http()
+        .post(`/api/referrals/${id}/reject`)
+        .set(as('hospital'))
+        .send({ reason: 'Hết giường hồi sức' })
+        .expect(409);
+
+      // Cập nhật ghi chú chuẩn bị
+      const upd = next<Update>(commune, 'referral_updated');
+      await http()
+        .patch(`/api/referrals/${id}/preparation`)
+        .set(as('hospital'))
+        .send({ preparationNote: 'Đổi sang phòng mổ số 3' })
+        .expect(200);
+      expect(await upd).toMatchObject({ preparationNote: 'Đổi sang phòng mổ số 3' });
+      await http()
+        .patch(`/api/referrals/${id}/preparation`)
+        .set(as('hospital'))
+        .send({ preparationNote: '' })
+        .expect(400);
+
+      // Tuyến xã / bệnh viện khác không phản hồi thay được
+      await http().post(`/api/referrals/${id}/accept`).set(as('commune')).send({}).expect(404);
+      await http().post(`/api/referrals/${id}/accept`).set(as('central')).send({}).expect(404);
+    });
+
+    it('không thể tiếp nhận → tuyến xã nhận lý do và gửi lại cho bệnh viện khác', async (ctx) => {
+      if (!dbReady) return ctx.skip();
+      const recId = await newRecord('R');
+      const id = await send(recId);
+      const commune = await connect('commune');
+      const ev = next<Update>(commune, 'referral_updated');
+      await http()
+        .post(`/api/referrals/${id}/reject`)
+        .set(as('hospital'))
+        .send({ reason: 'x' })
+        .expect(400);
+      const res = await http()
+        .post(`/api/referrals/${id}/reject`)
+        .set(as('hospital'))
+        .send({ reason: 'Hết giường hồi sức, máy thở đang dùng hết' })
+        .expect(200);
+      expect(res.body).toMatchObject({
+        status: 'REJECTED',
+        rejectionReason: expect.stringMatching(/Hết giường/),
+      });
+      expect(await ev).toMatchObject({
+        status: 'REJECTED',
+        side: 'outgoing',
+        rejectionReason: expect.stringMatching(/máy thở/),
+      });
+      await http().post(`/api/referrals/${id}/accept`).set(as('hospital')).send({}).expect(409);
+      // Phiếu bị từ chối không còn "đang thực hiện" → được lập lệnh mới tới bệnh viện khác
+      await http()
+        .post('/api/referrals')
+        .set(as('commune'))
+        .send(body({ sourceRecordId: recId, toFacilityId: fac.central }))
+        .expect(201);
+    });
+  });
 });

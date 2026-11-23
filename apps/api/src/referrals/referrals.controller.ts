@@ -1,10 +1,23 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import type { AuthUser } from '../auth/auth.types.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import {
+  acceptReferralSchema,
   cancelReferralSchema,
+  preparationSchema,
+  rejectReferralSchema,
   createReferralSchema,
   vitalBatchSchema,
   type VitalEntryInput,
@@ -87,5 +100,37 @@ export class ReferralsController {
     @Body(new ZodValidationPipe(vitalBatchSchema)) body: { entries: VitalEntryInput[] },
   ) {
     return this.vitals.record(id, user, body.entries);
+  }
+
+  /** Tuyến trên: xác nhận tiếp nhận & sẵn sàng ê-kíp */
+  @HttpCode(200)
+  @Post(':id/accept')
+  accept(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodValidationPipe(acceptReferralSchema)) body: { preparationNote: string | null },
+  ) {
+    return this.referrals.accept(id, user, body.preparationNote);
+  }
+
+  /** Tuyến trên: cập nhật ghi chú chuẩn bị sau khi đã tiếp nhận */
+  @Patch(':id/preparation')
+  preparation(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodValidationPipe(preparationSchema)) body: { preparationNote: string },
+  ) {
+    return this.referrals.updatePreparation(id, user, body.preparationNote);
+  }
+
+  /** Tuyến trên: không thể tiếp nhận */
+  @HttpCode(200)
+  @Post(':id/reject')
+  reject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodValidationPipe(rejectReferralSchema)) body: { reason: string },
+  ) {
+    return this.referrals.reject(id, user, body.reason);
   }
 }

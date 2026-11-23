@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   Building2,
-  ImageIcon,
   Phone,
   Smartphone,
   Stethoscope,
@@ -13,6 +12,7 @@ import {
   UserRound,
 } from 'lucide-react';
 
+import { ClinicalImageGallery } from '@/components/patient/clinical-image-gallery';
 import { PageHeader } from '@/components/shared/page-header';
 import { PriorityBadge, ReferralStatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ import { bloodType, encounterType, gender } from '@/lib/labels';
 import { CancelReferralButton } from './cancel-referral-button';
 import { EtaCountdown } from './eta-countdown';
 import { LiveVitalsPanel } from './live-vitals-panel';
+import { ReferralResponse } from './referral-response';
 import { ReferralLiveRefresh } from './referral-live-refresh';
 
 function Info({ label, children }: { label: string; children: React.ReactNode }) {
@@ -126,6 +127,12 @@ async function Detail({
         </p>
       )}
 
+      <ReferralResponse
+        referral={r}
+        portal={portal}
+        canRespond={r.toFacility.id === viewerFacility || session?.role === 'ADMIN'}
+      />
+
       <LiveVitalsPanel referralId={r.id} initial={vitals} escort={r.escort?.name ?? null} />
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -167,11 +174,10 @@ async function Detail({
                 </ul>
               </Info>
             )}
-            {src.imageCount > 0 && (
-              <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
-                <ImageIcon className="size-4" aria-hidden /> {src.imageCount} ảnh cận lâm sàng — xem
-                trong lịch sử khám của bệnh nhân.
-              </p>
+            {r.sourceImages && r.sourceImages.length > 0 && (
+              <Info label={`Ảnh cận lâm sàng (${r.sourceImages.length})`}>
+                <ClinicalImageGallery images={r.sourceImages} />
+              </Info>
             )}
           </CardContent>
         </Card>
@@ -250,7 +256,6 @@ async function Detail({
           <Card>
             <CardHeader>
               <CardTitle>Tiến trình</CardTitle>
-              <CardDescription>Xác nhận tiếp nhận & sẵn sàng ê-kíp: Task 4.4.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-2 text-sm">
               <p>Gửi lệnh: {formatDateTime(r.createdAt)}</p>

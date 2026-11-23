@@ -10,13 +10,17 @@ import { referralFormSchema, type ReferralFormValues } from '@/lib/data/referral
 import type { Referral } from '@/lib/data/types';
 import type { ActionResult } from './appointments';
 
-async function call<T>(path: string, body: unknown): Promise<ActionResult<T>> {
+async function call<T>(
+  path: string,
+  body: unknown,
+  method: 'POST' | 'PATCH' = 'POST',
+): Promise<ActionResult<T>> {
   const token = (await cookies()).get(ACCESS_COOKIE)?.value;
   if (!token) return { ok: false, message: 'Phiên đăng nhập đã hết hạn' };
   try {
     return {
       ok: true,
-      data: await apiFetch<T>(path, { method: 'POST', token, body: JSON.stringify(body) }),
+      data: await apiFetch<T>(path, { method, token, body: JSON.stringify(body) }),
     };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -48,6 +52,40 @@ export async function cancelReferral(id: string, reason: string): Promise<Action
   if (!z.uuid().safeParse(id).success || reason.trim().length < 3)
     return { ok: false, message: 'Nhập lý do huỷ' };
   const res = await call<Referral>(`/referrals/${id}/cancel`, { reason });
+  if (res.ok) refresh();
+  return res;
+}
+
+const validId = (id: string) => z.uuid().safeParse(id).success;
+
+/** Tuyến trên: xác nhận tiếp nhận & sẵn sàng ê-kíp. */
+export async function acceptReferral(
+  id: string,
+  preparationNote: string,
+): Promise<ActionResult<Referral>> {
+  if (!validId(id)) return { ok: false, message: 'Phiếu không hợp lệ' };
+  const res = await call<Referral>(`/referrals/${id}/accept`, {
+    preparationNote: preparationNote.trim() || null,
+  });
+  if (res.ok) refresh();
+  return res;
+}
+
+export async function updatePreparation(
+  id: string,
+  preparationNote: string,
+): Promise<ActionResult<Referral>> {
+  if (!validId(id) || preparationNote.trim().length < 3)
+    return { ok: false, message: 'Nhập ghi chú chuẩn bị' };
+  const res = await call<Referral>(`/referrals/${id}/preparation`, { preparationNote }, 'PATCH');
+  if (res.ok) refresh();
+  return res;
+}
+
+export async function rejectReferral(id: string, reason: string): Promise<ActionResult<Referral>> {
+  if (!validId(id) || reason.trim().length < 5)
+    return { ok: false, message: 'Nhập lý do (ít nhất 5 ký tự)' };
+  const res = await call<Referral>(`/referrals/${id}/reject`, { reason });
   if (res.ok) refresh();
   return res;
 }

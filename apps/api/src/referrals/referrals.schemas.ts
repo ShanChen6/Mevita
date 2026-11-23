@@ -50,6 +50,24 @@ export const cancelReferralSchema = z.object({
   reason: text(3, 500, 'lý do huỷ'),
 });
 
+/** Tuyến trên xác nhận tiếp nhận & sẵn sàng ê-kíp (ghi chú chuẩn bị tuỳ chọn) */
+export const acceptReferralSchema = z.object({
+  preparationNote: z
+    .string()
+    .trim()
+    .max(1000)
+    .nullish()
+    .transform((v) => v || null),
+});
+
+export const preparationSchema = z.object({
+  preparationNote: text(3, 1000, 'ghi chú chuẩn bị'),
+});
+
+export const rejectReferralSchema = z.object({
+  reason: text(5, 500, 'lý do không thể tiếp nhận'),
+});
+
 const int = (min: number, max: number, label: string) =>
   z
     .number()

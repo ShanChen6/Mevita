@@ -79,13 +79,19 @@ export function IncomingReferralCard({ referral: r, now }: { referral: Referral;
           </span>
         </div>
         <VitalStrip r={r} />
+        {r.status === 'ACCEPTED' && (
+          <p className="text-emerald-700 dark:text-emerald-400">
+            Ê-kíp sẵn sàng{r.acceptedBy && ` (${r.acceptedBy.name})`}
+            {r.preparationNote && `: ${r.preparationNote}`}
+          </p>
+        )}
         <Button
           asChild
           variant={r.status === 'PENDING' ? 'default' : 'outline'}
           className="self-start"
         >
           <Link href={`/province/referrals/${r.id}`}>
-            {r.status === 'PENDING' ? 'Xem hồ sơ ca bệnh' : 'Xem chi tiết'}
+            {r.status === 'PENDING' ? 'Xem hồ sơ & tiếp nhận' : 'Xem chi tiết'}
           </Link>
         </Button>
       </CardContent>

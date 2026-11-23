@@ -3,9 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { toast, Toaster } from 'sonner';
 
-import type { IncomingReferralAlert } from '@/lib/data/types';
+import type { ReferralUpdatedEvent } from '@/lib/data/types';
 import { formatTime } from '@/lib/format';
-import { referralPriority } from '@/lib/labels';
+import { IncomingAlertDialog } from './incoming-alert-dialog';
 import { useRealtimeEvent } from './realtime-provider';
 
 interface ChannelTest {
@@ -13,28 +13,49 @@ interface ChannelTest {
   sentAt: string;
 }
 
-/** Thông báo (toast) cho các sự kiện realtime chung của phân hệ nhân viên y tế. */
-export function RealtimeNotifications() {
+/** Popup ca mới + thông báo (toast) các sự kiện realtime của phân hệ nhân viên y tế. */
+export function RealtimeNotifications({ offset = 72 }: { offset?: number }) {
   const router = useRouter();
-  useRealtimeEvent<IncomingReferralAlert>('new_incoming_referral', (r) => {
-    const dx = r.diagnosis ? `${r.diagnosis.icdCode} ${r.diagnosis.name}` : r.reason;
-    toast.error(`${referralPriority[r.priority].label}: ca chuyển tuyến mới ${r.code}`, {
-      id: `referral-${r.id}`,
-      duration: r.priority === 'CRITICAL' ? Infinity : 30_000,
-      description: `${r.patient.fullName} — ${dx}. Từ ${r.fromFacility.name}${
-        r.estimatedArrivalAt ? `, dự kiến tới ${formatTime(r.estimatedArrivalAt)}` : ''
-      }.${r.patient.allergies ? ` Dị ứng: ${r.patient.allergies}.` : ''}`,
-      action: { label: 'Xem', onClick: () => router.push(`/province/referrals/${r.id}`) },
-    });
+
+  useRealtimeEvent<ReferralUpdatedEvent>('referral_updated', (e) => {
+    const id = `update-${e.id}-${e.action}`;
+    if (e.side === 'outgoing') {
+      // Phản hồi của bệnh viện nhận cho tuyến dưới / người đi kèm
+      if (e.action === 'accept')
+        toast.success(`${e.toFacility} đã tiếp nhận ca ${e.code} — ê-kíp sẵn sàng`, {
+          id,
+          duration: 20_000,
+          description: [e.patientName, e.by && `Xác nhận bởi ${e.by}`, e.preparationNote]
+            .filter(Boolean)
+            .join(' · '),
+        });
+      else if (e.action === 'preparation')
+        toast.info(`${e.toFacility} cập nhật chuẩn bị cho ca ${e.code}`, {
+          id,
+          description: e.preparationNote,
+        });
+      else if (e.action === 'reject')
+        toast.error(`${e.toFacility} không thể tiếp nhận ca ${e.code}`, {
+          id,
+          duration: Infinity,
+          description: `${e.rejectionReason ?? ''} — hãy chuyển tới bệnh viện khác.`,
+          action: {
+            label: 'Chuyển nơi khác',
+            onClick: () => {
+              // Đọc lúc bấm (không dùng usePathname để khung giao diện vẫn dựng sẵn được)
+              const portal = window.location.pathname.startsWith('/province')
+                ? 'province'
+                : 'commune';
+              router.push(`/${portal}/referrals/new?record=${e.sourceRecordId}`);
+            },
+          },
+        });
+      return;
+    }
+    if (e.action === 'cancel')
+      toast.warning(`Tuyến dưới đã huỷ lệnh ${e.code}`, { id, description: e.cancellationReason });
   });
-  useRealtimeEvent<{ id: string; code: string; status: string; cancellationReason?: string }>(
-    'referral_updated',
-    (r) => {
-      if (r.status !== 'CANCELLED') return;
-      toast.dismiss(`referral-${r.id}`);
-      toast.warning(`Tuyến dưới đã huỷ lệnh ${r.code}`, { description: r.cancellationReason });
-    },
-  );
+
   useRealtimeEvent<ChannelTest>('channel_test', (e) => {
     const who = e.from.academicTitle
       ? `${e.from.academicTitle}. ${e.from.fullName}`
@@ -43,7 +64,24 @@ export function RealtimeNotifications() {
       description: `Từ ${who} lúc ${formatTime(e.sentAt)} — kết nối thông suốt.`,
     });
   });
+
   return (
-    <Toaster position="top-right" richColors closeButton offset={72} mobileOffset={{ top: 64 }} />
+    <>
+      <IncomingAlertDialog
+        onResolved={(e) => {
+          if (e.action === 'accept' || e.action === 'reject')
+            toast.info(
+              `${e.by ?? 'Đồng nghiệp'} đã ${e.action === 'accept' ? 'tiếp nhận' : 'từ chối'} ca ${e.code}`,
+            );
+        }}
+      />
+      <Toaster
+        position="top-right"
+        richColors
+        closeButton
+        offset={offset}
+        mobileOffset={{ top: offset - 8 }}
+      />
+    </>
   );
 }

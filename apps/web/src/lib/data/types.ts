@@ -331,6 +331,8 @@ export interface Referral {
   interProvincial: boolean;
   vitalLogCount: number;
   latestVital: VitalLog | null;
+  /** Chỉ có ở chi tiết phiếu: ảnh cận lâm sàng của phiếu khám tuyến dưới */
+  sourceImages?: ClinicalImage[];
   fromFacility: ReferralFacility;
   toFacility: ReferralFacility;
   referredBy: { id: string; name: string; phone: string | null };
@@ -426,4 +428,24 @@ export interface VitalUpdateEvent {
   referralId: string;
   code: string;
   vitals: VitalLog[];
+}
+
+/** Sự kiện realtime `referral_updated` — `side` cho biết mình là phía gửi hay phía nhận */
+export interface ReferralUpdatedEvent {
+  id: string;
+  code: string;
+  action: 'accept' | 'preparation' | 'reject' | 'cancel';
+  status: ReferralStatusValue;
+  side: 'incoming' | 'outgoing';
+  priority: ReferralPriorityValue;
+  sourceRecordId: string;
+  patientName: string;
+  fromFacility: string;
+  toFacility: string;
+  toFacilityPhone: string | null;
+  preparationNote: string | null;
+  rejectionReason: string | null;
+  cancellationReason: string | null;
+  by: string | null;
+  at: string;
 }

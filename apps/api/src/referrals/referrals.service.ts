@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service.js';
+import { ClinicalImagesService } from '../clinical-images/clinical-images.service.js';
 import type { AuthUser } from '../auth/auth.types.js';
 import { generateCode } from '../common/codes.js';
 import { addMinutes } from '../common/vn-time.js';
@@ -120,6 +121,7 @@ export class ReferralsService {
     private readonly prisma: PrismaService,
     private readonly realtime: RealtimeService,
     private readonly audit: AuditService,
+    private readonly images: ClinicalImagesService,
   ) {}
 
   /**
@@ -293,7 +295,20 @@ export class ReferralsService {
           [referral.fromFacility.id, referral.toFacility.id].includes(user.facilityId)));
     if (!referral || !allowed) throw new NotFoundException('Không tìm thấy phiếu chuyển tuyến');
     await this.audit.log({ userId: user.id, action: 'VIEW', entityType: 'Referral', entityId: id });
-    return this.toDto(referral);
+    const images = await this.prisma.clinicalImage.findMany({
+      where: { medicalRecordId: referral.sourceRecord.id },
+      select: {
+        id: true,
+        type: true,
+        cloudinaryPublicId: true,
+        description: true,
+        takenAt: true,
+        width: true,
+        height: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    return { ...this.toDto(referral), sourceImages: images.map((img) => this.images.toDto(img)) };
   }
 
   /** Cơ sở gửi huỷ lệnh (VD bệnh nhân ổn định, đổi nơi chuyển) — báo ngay cho bệnh viện đích. */
@@ -313,12 +328,7 @@ export class ReferralsService {
       where: { id },
       select: referralSelect,
     });
-    await this.realtime.emitToFacility(referral.toFacilityId, RealtimeEvent.ReferralUpdated, {
-      id,
-      code: referral.code,
-      status: 'CANCELLED',
-      cancellationReason: reason,
-    });
+    await this.notifyChange(updated, user, 'cancel');
     await this.audit.log({
       userId: user.id,
       action: 'UPDATE',
@@ -327,6 +337,120 @@ export class ReferralsService {
       metadata: { action: 'cancel' },
     });
     return this.toDto(updated);
+  }
+
+  /**
+   * Bệnh viện nhận xác nhận "Tiếp nhận & sẵn sàng ê-kíp" — tuyến dưới và người đi kèm nhận phản hồi ngay.
+   * Chỉ một bác sĩ xác nhận được (cập nhật có điều kiện PENDING → ACCEPTED).
+   */
+  async accept(id: string, user: AuthUser, preparationNote: string | null) {
+    await this.assertReceiver(id, user);
+    const { count } = await this.prisma.referral.updateMany({
+      where: { id, status: 'PENDING' },
+      data: { status: 'ACCEPTED', acceptedAt: new Date(), acceptedById: user.id, preparationNote },
+    });
+    if (count === 0) throw new ConflictException('Ca này đã được xử lý bởi người khác');
+    return this.afterResponse(id, user, 'accept');
+  }
+
+  /** Cập nhật ghi chú chuẩn bị sau khi đã tiếp nhận (VD đổi phòng mổ). */
+  async updatePreparation(id: string, user: AuthUser, preparationNote: string) {
+    await this.assertReceiver(id, user);
+    const { count } = await this.prisma.referral.updateMany({
+      where: { id, status: 'ACCEPTED' },
+      data: { preparationNote },
+    });
+    if (count === 0)
+      throw new ConflictException('Chỉ cập nhật được ca đã tiếp nhận, còn đang trên đường');
+    return this.afterResponse(id, user, 'preparation');
+  }
+
+  /** Không thể tiếp nhận (hết giường, thiếu chuyên khoa…) — tuyến dưới chuyển nơi khác. */
+  async reject(id: string, user: AuthUser, reason: string) {
+    await this.assertReceiver(id, user);
+    const { count } = await this.prisma.referral.updateMany({
+      where: { id, status: 'PENDING' },
+      data: {
+        status: 'REJECTED',
+        rejectionReason: reason,
+        acceptedById: user.id,
+        acceptedAt: new Date(),
+      },
+    });
+    if (count === 0) throw new ConflictException('Ca này đã được xử lý bởi người khác');
+    return this.afterResponse(id, user, 'reject');
+  }
+
+  private async assertReceiver(id: string, user: AuthUser) {
+    const r = await this.prisma.referral.findUnique({
+      where: { id },
+      select: { toFacilityId: true },
+    });
+    if (!r || (r.toFacilityId !== user.facilityId && user.role !== 'ADMIN'))
+      throw new NotFoundException('Không tìm thấy phiếu chuyển tuyến');
+  }
+
+  private async afterResponse(
+    id: string,
+    user: AuthUser,
+    action: 'accept' | 'preparation' | 'reject',
+  ) {
+    const updated = await this.prisma.referral.findUniqueOrThrow({
+      where: { id },
+      select: referralSelect,
+    });
+    await this.notifyChange(updated, user, action);
+    await this.audit.log({
+      userId: user.id,
+      action: 'UPDATE',
+      entityType: 'Referral',
+      entityId: id,
+      metadata: { action },
+    });
+    return this.toDto(updated);
+  }
+
+  /**
+   * Phát `referral_updated` tới cả hai phía: `side = outgoing` cho cơ sở gửi (bác sĩ chuyển, người đi kèm),
+   * `side = incoming` cho bệnh viện nhận (các bác sĩ trực khác thấy ca đã có người xử lý).
+   */
+  private async notifyChange(
+    r: ReferralRow,
+    actor: AuthUser,
+    action: 'accept' | 'preparation' | 'reject' | 'cancel',
+  ) {
+    const actorRow = await this.prisma.user.findUnique({
+      where: { id: actor.id },
+      select: staffBrief,
+    });
+    const base = {
+      id: r.id,
+      code: r.code,
+      action,
+      status: r.status,
+      priority: r.priority,
+      sourceRecordId: r.sourceRecord.id,
+      patientName: r.patient.fullName,
+      fromFacility: r.fromFacility.name,
+      toFacility: r.toFacility.name,
+      toFacilityPhone: r.toFacility.emergencyPhone ?? r.toFacility.phone,
+      preparationNote: r.preparationNote,
+      rejectionReason: r.rejectionReason,
+      cancellationReason: r.cancellationReason,
+      by: name(actorRow),
+      byUserId: actor.id,
+      at: new Date(),
+    };
+    await Promise.all([
+      this.realtime.emitToFacility(r.fromFacility.id, RealtimeEvent.ReferralUpdated, {
+        ...base,
+        side: 'outgoing',
+      }),
+      this.realtime.emitToFacility(r.toFacility.id, RealtimeEvent.ReferralUpdated, {
+        ...base,
+        side: 'incoming',
+      }),
+    ]);
   }
 
   private async facilityOf(user: AuthUser) {

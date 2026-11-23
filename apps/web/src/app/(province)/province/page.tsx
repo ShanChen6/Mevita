@@ -1,8 +1,9 @@
 import { connection } from 'next/server';
 import { Suspense } from 'react';
-import { Ambulance, BellRing, Globe2 } from 'lucide-react';
+import { BellRing, CheckCheck, Globe2 } from 'lucide-react';
 
 import { ConnectionStatus } from '@/components/realtime/connection-status';
+import { SoundToggle } from '@/components/realtime/sound-toggle';
 import { TestSignalButton } from '@/components/realtime/test-signal-button';
 import { IncomingReferralCard } from '@/components/referrals/incoming-referral-card';
 import { ReferralLiveRefresh } from '@/components/referrals/referral-live-refresh';
@@ -22,7 +23,11 @@ async function Incoming() {
           value={active.filter((r) => r.status === 'PENDING').length}
           icon={BellRing}
         />
-        <StatCard label="Đang trên đường" value={active.length} icon={Ambulance} />
+        <StatCard
+          label="Đã sẵn sàng ê-kíp"
+          value={active.filter((r) => r.status === 'ACCEPTED').length}
+          icon={CheckCheck}
+        />
         <StatCard
           label="Ca liên tỉnh"
           value={active.filter((r) => r.interProvincial).length}
@@ -58,6 +63,7 @@ export default function CoordinationCenterPage() {
         actions={
           <>
             <ConnectionStatus detailed />
+            <SoundToggle />
             <TestSignalButton />
           </>
         }
