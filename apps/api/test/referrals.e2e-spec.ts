@@ -634,4 +634,159 @@ describe('Chuyển tuyến khẩn cấp (e2e)', () => {
         .expect(201);
     });
   });
+
+  describe('tiếp nhận & điều trị tiếp nối (Task 5.1)', () => {
+    it('xe tới: phiếu → ARRIVED, mở hồ sơ tiếp nối kế thừa dữ liệu tuyến xã; bấm lại không tạo trùng', async (ctx) => {
+      if (!dbReady) return ctx.skip();
+      const record = await prisma.medicalRecord.create({
+        data: {
+          code: `E2E-${tag}-T`,
+          patientId,
+          doctorId: ids.users[0],
+          facilityId: fac.station,
+          encounterType: 'EMERGENCY',
+          chiefComplaint: 'Tai nạn giao thông, đau đầu',
+          symptoms: 'Ngã xe máy, bất tỉnh 5 phút',
+          pulse: 100,
+          spo2: 95,
+          weightKg: 60,
+          diagnoses: { create: { icdCode: 'S06.5', isPrimary: true } },
+        },
+      });
+      const created = await http()
+        .post('/api/referrals')
+        .set(as('commune'))
+        .send(body({ sourceRecordId: record.id }))
+        .expect(201);
+      const id = (created.body as { referral: { id: string } }).referral.id;
+      await http()
+        .post(`/api/referrals/${id}/vitals`)
+        .set(as('nurse'))
+        .send({
+          entries: [
+            {
+              clientId: randomUUID(),
+              recordedAt: new Date().toISOString(),
+              pulse: 124,
+              systolicBp: 92,
+              diastolicBp: 58,
+              spo2: 89,
+            },
+          ],
+        })
+        .expect(200);
+      await http().post(`/api/referrals/${id}/accept`).set(as('hospital')).send({}).expect(200);
+
+      // Tuyến xã không tự đánh dấu "đã tới" thay bệnh viện
+      await http().post(`/api/referrals/${id}/arrive`).set(as('commune')).expect(404);
+
+      const commune = await connect('commune');
+      const ev = next<{ action: string; status: string; side: string }>(
+        commune,
+        'referral_updated',
+      );
+      const res = await http().post(`/api/referrals/${id}/arrive`).set(as('hospital')).expect(200);
+      const out = res.body as {
+        created: boolean;
+        recordId: string;
+        referral: {
+          status: string;
+          arrivedAt: string;
+          receivedBy: { name: string };
+          continuationRecord: { id: string };
+        };
+      };
+      expect(out).toMatchObject({
+        created: true,
+        referral: {
+          status: 'ARRIVED',
+          receivedBy: { name: 'BS. NV hospital' },
+          continuationRecord: { id: out.recordId },
+        },
+      });
+      expect(await ev).toMatchObject({ action: 'arrive', status: 'ARRIVED', side: 'outgoing' });
+
+      const rec = (
+        await http().get(`/api/medical-records/${out.recordId}`).set(as('hospital')).expect(200)
+      ).body as {
+        status: string;
+        facilityId: string;
+        chiefComplaint: string;
+        symptoms: string;
+        pulse: number;
+        systolicBp: number;
+        spo2: number;
+        temperature: number | null;
+        weightKg: number;
+        diagnoses: { icdCode: string; isPrimary: boolean }[];
+        sourceReferral: { id: string; fromFacility: { name: string } };
+      };
+      expect(rec).toMatchObject({
+        status: 'DRAFT',
+        facilityId: fac.hospital,
+        pulse: 124, // lần đo mới nhất trên xe
+        systolicBp: 92,
+        spo2: 89,
+        temperature: null, // xe không đo → để trống, không lấy số đo cũ
+        weightKg: 60, // từ phiếu khám tuyến xã
+        diagnoses: [{ icdCode: 'S06.5', isPrimary: true }],
+        sourceReferral: { id },
+      });
+      expect(rec.chiefComplaint).toMatch(/^Chuyển tuyến từ Tram/);
+      expect(rec.symptoms).toMatch(/Ngã xe máy/);
+      expect(rec.symptoms).toMatch(/Tóm tắt chuyển tuyến/);
+      expect(rec.symptoms).toMatch(/Cố định cột sống cổ/);
+      expect(rec.symptoms).toMatch(/1 lần đo sinh tồn/);
+
+      // Bấm lại → trả về hồ sơ đã mở
+      const again = await http()
+        .post(`/api/referrals/${id}/arrive`)
+        .set(as('hospital'))
+        .expect(200);
+      expect(again.body).toMatchObject({ created: false, recordId: out.recordId });
+      expect(await prisma.medicalRecord.count({ where: { sourceReferralId: id } })).toBe(1);
+
+      // Đã tới thì không huỷ được; dữ liệu trên xe đồng bộ muộn vẫn nhận
+      await http()
+        .post(`/api/referrals/${id}/cancel`)
+        .set(as('commune'))
+        .send({ reason: 'Thử huỷ' })
+        .expect(409);
+      await http()
+        .post(`/api/referrals/${id}/vitals`)
+        .set(as('nurse'))
+        .send({
+          entries: [{ clientId: randomUUID(), recordedAt: new Date().toISOString(), spo2: 90 }],
+        })
+        .expect(200);
+
+      // Tuyến xã xem được hồ sơ tiếp nối sau khi ký (chính sách truy cập theo phiếu chuyển tuyến)
+      await http().get(`/api/medical-records/${out.recordId}`).set(as('commune')).expect(404); // còn nháp
+    });
+
+    it('ca bị huỷ/từ chối không tiếp nhận được', async (ctx) => {
+      if (!dbReady) return ctx.skip();
+      const record = await prisma.medicalRecord.create({
+        data: {
+          code: `E2E-${tag}-X`,
+          patientId,
+          doctorId: ids.users[0],
+          facilityId: fac.station,
+          chiefComplaint: 'Đau bụng',
+        },
+      });
+      const created = await http()
+        .post('/api/referrals')
+        .set(as('commune'))
+        .send(body({ sourceRecordId: record.id }))
+        .expect(201);
+      const id = (created.body as { referral: { id: string } }).referral.id;
+      await http()
+        .post(`/api/referrals/${id}/cancel`)
+        .set(as('commune'))
+        .send({ reason: 'Ổn định' })
+        .expect(200);
+      await http().post(`/api/referrals/${id}/arrive`).set(as('hospital')).expect(409);
+    });
+  });
 });

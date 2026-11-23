@@ -87,7 +87,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 - [Khám bệnh, ICD-10 & ký hồ sơ](docs/medical-records.md)
 - [Ảnh cận lâm sàng (Cloudinary)](docs/clinical-images.md)
 - [Kiến trúc real-time (Socket.io)](docs/realtime.md)
-- [Lệnh chuyển tuyến khẩn cấp & điều phối tiếp nhận](docs/referrals.md)
+- [Chuyển tuyến khẩn cấp: lệnh, điều phối, tiếp nhận & điều trị tiếp nối](docs/referrals.md)
 - [Sinh tồn trên xe chuyển viện (offline-first)](docs/escort-vitals.md)
 
 ## Nhánh làm việc

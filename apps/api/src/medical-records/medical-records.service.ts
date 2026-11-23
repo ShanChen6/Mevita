@@ -56,6 +56,14 @@ const recordSelect = {
     },
   },
   appointment: { select: { id: true, code: true, startAt: true, status: true } },
+  sourceReferral: {
+    select: {
+      id: true,
+      code: true,
+      fromFacility: { select: { name: true } },
+      arrivedAt: true,
+    },
+  },
   patient: {
     select: {
       id: true,

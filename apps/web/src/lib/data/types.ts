@@ -76,6 +76,8 @@ export interface MedicalRecordItem {
     durationDays: number | null;
   }[];
   clinicalImages: ClinicalImage[];
+  /** Hồ sơ điều trị tiếp nối tại tuyến trên (Task 5.1) */
+  sourceReferral?: { code: string; fromFacility: { name: string } } | null;
 }
 
 /** Ảnh cận lâm sàng — `secureUrl` (ảnh gốc) và `thumbnailUrl` là URL có chữ ký do API cấp. */
@@ -268,6 +270,12 @@ export interface MedicalRecordDetail {
   facility: { id: string; name: string };
   doctor: { id: string; fullName: string; academicTitle: string | null; position: string | null };
   appointment: { id: string; code: string; startAt: string; status: AppointmentStatusValue } | null;
+  sourceReferral: {
+    id: string;
+    code: string;
+    fromFacility: { name: string };
+    arrivedAt: string | null;
+  } | null;
   patient: {
     id: string;
     fullName: string;
@@ -338,6 +346,13 @@ export interface Referral {
   referredBy: { id: string; name: string; phone: string | null };
   escort: { id: string; name: string; phone: string | null } | null;
   acceptedBy: { id: string; name: string } | null;
+  receivedBy: { id: string; name: string } | null;
+  continuationRecord: {
+    id: string;
+    code: string;
+    status: 'DRAFT' | 'FINALIZED';
+    signedAt: string | null;
+  } | null;
   patient: {
     id: string;
     fullName: string;
@@ -434,7 +449,7 @@ export interface VitalUpdateEvent {
 export interface ReferralUpdatedEvent {
   id: string;
   code: string;
-  action: 'accept' | 'preparation' | 'reject' | 'cancel';
+  action: 'accept' | 'preparation' | 'reject' | 'cancel' | 'arrive';
   status: ReferralStatusValue;
   side: 'incoming' | 'outgoing';
   priority: ReferralPriorityValue;

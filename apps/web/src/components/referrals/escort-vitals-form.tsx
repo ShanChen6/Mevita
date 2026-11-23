@@ -99,9 +99,12 @@ function parse(data: FormData, consciousness: ConsciousnessValue | null): VitalE
 export function EscortVitalsForm({
   referralId,
   initial,
+  readOnly = false,
 }: {
   referralId: string;
   initial: VitalLog[];
+  /** Đã bàn giao: ẩn form nhập nhưng vẫn gửi nốt các lần đo còn trong hàng đợi */
+  readOnly?: boolean;
 }) {
   const { socket, status } = useRealtime();
   const queue = useSyncExternalStore(subscribeQueue, () => readQueue(referralId), emptyQueue);
@@ -218,69 +221,74 @@ export function EscortVitalsForm({
         )}
       </div>
 
-      <form ref={formRef} onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-        <div className="grid grid-cols-2 gap-3">
-          {NUM.map((f) => (
-            <div
-              key={f.id}
-              className={cn('flex flex-col gap-1.5', f.id === 'gcs' && 'col-span-2 sm:col-span-1')}
-            >
-              <Label htmlFor={f.id}>
-                {f.label} <span className="text-muted-foreground font-normal">({f.unit})</span>
-              </Label>
-              <Input
-                id={f.id}
-                name={f.id}
-                inputMode={f.id === 'bp' ? 'text' : 'numeric'}
-                autoComplete="off"
-                placeholder={f.id === 'bp' ? '120/80' : undefined}
-                className="h-14 text-center text-2xl font-semibold tabular-nums"
-              />
-            </div>
-          ))}
-        </div>
-
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-sm font-medium">Tri giác (AVPU)</legend>
-          <div className="grid grid-cols-4 gap-2">
-            {LEVELS.map((l) => (
-              <Button
-                key={l}
-                type="button"
-                variant={level === l ? 'default' : 'outline'}
-                className="h-12 text-lg font-bold"
-                onClick={() => setLevel(level === l ? null : l)}
-                aria-pressed={level === l}
-                aria-label={consciousnessLevel[l]}
+      {!readOnly && (
+        <form ref={formRef} onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+          <div className="grid grid-cols-2 gap-3">
+            {NUM.map((f) => (
+              <div
+                key={f.id}
+                className={cn(
+                  'flex flex-col gap-1.5',
+                  f.id === 'gcs' && 'col-span-2 sm:col-span-1',
+                )}
               >
-                {l[0]}
-              </Button>
+                <Label htmlFor={f.id}>
+                  {f.label} <span className="text-muted-foreground font-normal">({f.unit})</span>
+                </Label>
+                <Input
+                  id={f.id}
+                  name={f.id}
+                  inputMode={f.id === 'bp' ? 'text' : 'numeric'}
+                  autoComplete="off"
+                  placeholder={f.id === 'bp' ? '120/80' : undefined}
+                  className="h-14 text-center text-2xl font-semibold tabular-nums"
+                />
+              </div>
             ))}
           </div>
-          <p className="text-muted-foreground text-xs">
-            {level ? consciousnessLevel[level] : 'Chạm để chọn (tuỳ chọn)'}
-          </p>
-        </fieldset>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="note">Ghi chú</Label>
-          <Input
-            id="note"
-            name="note"
-            placeholder="VD: nôn 1 lần, đồng tử P > T"
-            autoComplete="off"
-          />
-        </div>
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1 text-sm font-medium">Tri giác (AVPU)</legend>
+            <div className="grid grid-cols-4 gap-2">
+              {LEVELS.map((l) => (
+                <Button
+                  key={l}
+                  type="button"
+                  variant={level === l ? 'default' : 'outline'}
+                  className="h-12 text-lg font-bold"
+                  onClick={() => setLevel(level === l ? null : l)}
+                  aria-pressed={level === l}
+                  aria-label={consciousnessLevel[l]}
+                >
+                  {l[0]}
+                </Button>
+              ))}
+            </div>
+            <p className="text-muted-foreground text-xs">
+              {level ? consciousnessLevel[level] : 'Chạm để chọn (tuỳ chọn)'}
+            </p>
+          </fieldset>
 
-        {error && (
-          <p role="alert" className="text-destructive text-sm font-medium">
-            {error}
-          </p>
-        )}
-        <Button type="submit" size="lg" className="h-14 text-base">
-          <Send /> Gửi chỉ số
-        </Button>
-      </form>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="note">Ghi chú</Label>
+            <Input
+              id="note"
+              name="note"
+              placeholder="VD: nôn 1 lần, đồng tử P > T"
+              autoComplete="off"
+            />
+          </div>
+
+          {error && (
+            <p role="alert" className="text-destructive text-sm font-medium">
+              {error}
+            </p>
+          )}
+          <Button type="submit" size="lg" className="h-14 text-base">
+            <Send /> Gửi chỉ số
+          </Button>
+        </form>
+      )}
 
       {failed.length > 0 && (
         <ul className="flex flex-col gap-2" aria-label="Bản ghi bị từ chối">

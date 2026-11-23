@@ -133,4 +133,11 @@ export class ReferralsController {
   ) {
     return this.referrals.reject(id, user, body.reason);
   }
+
+  /** Tuyến trên: xe đã tới — tiếp nhận bệnh nhân và mở hồ sơ điều trị tiếp nối */
+  @HttpCode(200)
+  @Post(':id/arrive')
+  arrive(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+    return this.referrals.arrive(id, user);
+  }
 }

@@ -89,3 +89,13 @@ export async function rejectReferral(id: string, reason: string): Promise<Action
   if (res.ok) refresh();
   return res;
 }
+
+/** Xe đã tới: tiếp nhận bệnh nhân và mở hồ sơ điều trị tiếp nối (trả id hồ sơ để chuyển trang). */
+export async function arriveReferral(
+  id: string,
+): Promise<ActionResult<{ recordId: string; created: boolean }>> {
+  if (!validId(id)) return { ok: false, message: 'Phiếu không hợp lệ' };
+  const res = await call<{ recordId: string; created: boolean }>(`/referrals/${id}/arrive`, {});
+  if (res.ok) refresh();
+  return res;
+}

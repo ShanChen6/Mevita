@@ -1,4 +1,4 @@
-# Lệnh chuyển tuyến khẩn cấp & điều phối tiếp nhận (Task 4.2, 4.4)
+# Chuyển tuyến khẩn cấp: lệnh, điều phối, tiếp nhận & điều trị tiếp nối (Task 4.2, 4.4, 5.1)
 
 Bác sĩ tuyến dưới (trạm y tế xã, hoặc bệnh viện tỉnh chuyển lên tuyến trung ương) tạo **lệnh chuyển tuyến** từ phiếu khám của bệnh nhân. Bác sĩ đang trực tại bệnh viện nhận được cảnh báo qua Socket.io ngay khi lệnh được gửi (đo trên máy phát triển: ~80–120 ms tính từ lúc bấm gửi).
 
@@ -92,11 +92,37 @@ sequenceDiagram
 - **Tuyến xã & người đi kèm** nhận thông báo ngay: "đã tiếp nhận — ê-kíp sẵn sàng" kèm ghi chú chuẩn bị (màn hình trên xe hiện mục "Tuyến trên: …"); bị từ chối thì thông báo không tự tắt, có nút **Chuyển nơi khác** mở lại form chuyển tuyến của bệnh nhân đó.
 - Chỉ một bác sĩ xác nhận được (cập nhật có điều kiện trong CSDL); popup của các bác sĩ trực khác tự đóng kèm thông báo ai đã xử lý. `acceptedBy`/`acceptedAt` lưu người và thời điểm phản hồi (cả khi từ chối).
 
+## Tiếp nhận & điều trị tiếp nối (Task 5.1)
+
+Khi xe tới, bác sĩ bệnh viện nhận bấm **Xe đã tới — Tiếp nhận bệnh nhân** trên phiếu chuyển tuyến (có cả khi chưa kịp bấm xác nhận ê-kíp). Trong một giao dịch:
+
+1. Phiếu chuyển `ARRIVED`, lưu `arrivedAt`, `receivedBy` (và `acceptedBy/At` nếu trước đó chưa xác nhận).
+2. Mở **hồ sơ điều trị tiếp nối** (`MedicalRecord.sourceReferralId`, nháp, hình thức Cấp cứu, tại bệnh viện nhận, bác sĩ = người tiếp nhận), điền sẵn:
+
+| Trường hồ sơ mới      | Kế thừa từ                                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Lý do đến khám        | `Chuyển tuyến từ <cơ sở gửi>: <lý do khám tại tuyến dưới>`                                                                            |
+| Triệu chứng / bệnh sử | Bệnh sử + khám tại tuyến dưới, tóm tắt chuyển tuyến, xử trí tuyến dưới, số lần đo trên xe                                             |
+| Sinh tồn              | Lần đo **mới nhất trên xe**; chỉ số xe không đo để trống (không trộn số đo cũ). Xe chưa đo lần nào → sinh tồn lúc khám tại tuyến dưới |
+| Cân nặng, chiều cao   | Phiếu khám tuyến dưới                                                                                                                 |
+| Chẩn đoán (ICD-10)    | Chẩn đoán tuyến dưới làm **chẩn đoán làm việc** (ghi chú "Chẩn đoán tuyến dưới") — bác sĩ xác định lại trước khi ký                   |
+
+3. Phát `referral_updated` (`action: "arrive"`): tuyến xã nhận "đã tiếp nhận bệnh nhân"; màn hình trên xe chuyển sang "Đã bàn giao" (ẩn form nhập, vẫn gửi nốt các lần đo còn lưu tạm — xem [escort-vitals.md](escort-vitals.md)).
+
+Bác sĩ được chuyển thẳng vào trang khám của hồ sơ mới. Phía trên form khám là khung **Hồ sơ chuyển tuyến** (thu gọn được): lý do chuyển, lý do khám/bệnh sử/khám/sinh tồn tại tuyến dưới, chẩn đoán, xử trí sơ cứu, thuốc đã dùng, liên lạc bác sĩ chuyển, tóm tắt, **ảnh cận lâm sàng**, **diễn biến sinh tồn trên xe** (biểu đồ + bảng). Khung này vẫn hiện trên bản đã ký. Hồ sơ tiếp nối ký như mọi phiếu khám (Task 3.2).
+
+- `/province/records` — **Hồ sơ điều trị tiếp nối**: bệnh nhân đã tiếp nhận từ tuyến dưới, nơi chuyển, giờ & người tiếp nhận, trạng thái hồ sơ (Đang điều trị / Đã ký).
+- Lịch sử khám của bệnh nhân (cổng bệnh nhân và tra cứu của nhân viên) gắn nhãn **"Tiếp nối chuyển tuyến CT… từ …"**. Tuyến xã xem được hồ sơ tiếp nối sau khi ký (chính sách truy cập theo phiếu chuyển tuyến).
+- Không tiếp nhận được phiếu đã huỷ/từ chối (409); bấm lại "Xe đã tới" không tạo hồ sơ trùng; tuyến xã không tự đánh dấu "đã tới".
+
 ## Khi không ai trực trực tuyến
 
 Lệnh vẫn được lưu và hiện trên bảng điều phối khi bác sĩ bệnh viện mở hệ thống. Form cảnh báo trước khi gửi, và sau khi gửi (`delivered = 0`) màn hình nhắc **gọi đường dây nóng** (`emergencyPhone` của cơ sở, dữ liệu mẫu: BVĐK Lào Cai `0900 111 115`, Việt Đức `0900 222 115`).
 
 ## Kiểm thử
+
+- E2E Task 5.1: tuyến xã không đánh dấu thay (404); xe tới → ARRIVED, `receivedBy`, sự kiện `arrive` tới tuyến xã; hồ sơ tiếp nối nháp tại BV nhận kế thừa lý do khám, bệnh sử + tóm tắt + xử trí + diễn biến xe, sinh tồn mới nhất trên xe (nhiệt độ xe không đo → trống), cân nặng, chẩn đoán; bấm lại không tạo trùng; không huỷ được sau khi tới; dữ liệu trên xe đồng bộ muộn vẫn nhận; phiếu đã huỷ không tiếp nhận được.
+- Trình duyệt Task 5.1: xác nhận ê-kíp → "Xe đã tới" → mở thẳng hồ sơ tiếp nối (~220 ms) với khung chuyển tuyến, form điền sẵn; tuyến xã & điện thoại trên xe nhận "đã bàn giao"; khám bổ sung và ký; danh sách hồ sơ tiếp nối "Đã ký"; tuyến xã thấy hồ sơ trong lịch sử bệnh nhân.
 
 - E2E Task 4.4: xác nhận tiếp nhận → cơ sở gửi, người đi kèm và bác sĩ trực khác nhận `referral_updated` dưới 1 giây; chi tiết có ảnh cận lâm sàng; không xác nhận/từ chối hai lần (409); cập nhật ghi chú; tuyến xã/BV khác không phản hồi thay; từ chối → lập lệnh mới tới BV khác.
 - Trình duyệt Task 4.4: popup + âm thanh ở cả trang khác, mở hồ sơ (ảnh tải được), xác nhận kèm ghi chú → tuyến xã & điện thoại trên xe nhận ngay, popup bác sĩ thứ hai tự đóng; cập nhật ghi chú; tắt âm thanh; từ chối → "Chuyển nơi khác".

@@ -42,6 +42,11 @@ export function RecordCard({ record: r }: { record: MedicalRecordItem }) {
           {r.encounterType !== 'OUTPATIENT' && (
             <Badge variant="outline">{encounterType[r.encounterType]}</Badge>
           )}
+          {r.sourceReferral && (
+            <Badge variant="outline" className="border-sky-300 text-sky-800 dark:text-sky-300">
+              Tiếp nối chuyển tuyến {r.sourceReferral.code} từ {r.sourceReferral.fromFacility.name}
+            </Badge>
+          )}
         </div>
         <CardTitle className="text-lg">{r.chiefComplaint}</CardTitle>
         <div className="text-muted-foreground flex flex-col gap-1 text-sm sm:flex-row sm:flex-wrap sm:gap-x-4">

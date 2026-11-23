@@ -57,6 +57,8 @@ const referralSelect = {
   referredBy: { select: staffBrief },
   escort: { select: staffBrief },
   acceptedBy: { select: staffBrief },
+  receivedBy: { select: staffBrief },
+  continuationRecord: { select: { id: true, code: true, status: true, signedAt: true } },
   patient: {
     select: {
       id: true,
@@ -114,6 +116,17 @@ const name = (
       ? `${u.staffProfile.academicTitle}. ${u.fullName}`
       : u.fullName
     : null;
+
+/** Dòng tóm tắt diễn biến trên xe đưa vào bệnh sử của hồ sơ tiếp nối. */
+function vitalsLine(n: number, last?: Date) {
+  if (n === 0) return null;
+  const t = last?.toLocaleTimeString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Ho_Chi_Minh',
+  });
+  return `Diễn biến trên xe: ${n} lần đo sinh tồn${t ? `, lần cuối lúc ${t}` : ''} (xem phiếu chuyển tuyến).`;
+}
 
 @Injectable()
 export class ReferralsService {
@@ -381,6 +394,122 @@ export class ReferralsService {
     return this.afterResponse(id, user, 'reject');
   }
 
+  /**
+   * Xe tới nơi (Task 5.1): phiếu → ARRIVED và mở **hồ sơ điều trị tiếp nối** tại bệnh viện nhận, kế thừa
+   * bệnh sử, tóm tắt chuyển tuyến, xử trí tuyến dưới, sinh tồn mới nhất trên xe và chẩn đoán làm việc —
+   * bác sĩ không phải hỏi lại từ đầu. Gọi lại khi đã tiếp nhận trả về hồ sơ đã mở (bấm hai lần không tạo trùng).
+   */
+  async arrive(id: string, user: AuthUser) {
+    await this.assertReceiver(id, user);
+    const r = await this.prisma.referral.findUniqueOrThrow({
+      where: { id },
+      select: {
+        ...referralSelect,
+        sourceRecord: {
+          select: {
+            ...referralSelect.sourceRecord.select,
+            weightKg: true,
+            heightCm: true,
+          },
+        },
+      },
+    });
+    if (r.status === 'ARRIVED' && r.continuationRecord)
+      return { referral: this.toDto(r), recordId: r.continuationRecord.id, created: false };
+    if (r.status !== 'PENDING' && r.status !== 'ACCEPTED')
+      throw new ConflictException('Phiếu chuyển tuyến đã kết thúc, không thể tiếp nhận');
+
+    const src = r.sourceRecord;
+    const v = r.vitalLogs[0];
+    const now = new Date();
+    const symptoms = [
+      src.symptoms && `Bệnh sử tại tuyến dưới: ${src.symptoms}`,
+      src.physicalExamination && `Khám tại tuyến dưới: ${src.physicalExamination}`,
+      `Tóm tắt chuyển tuyến (${r.code} — ${r.fromFacility.name}): ${r.clinicalSummary}`,
+      r.initialTreatment && `Xử trí tuyến dưới: ${r.initialTreatment}`,
+      vitalsLine(r._count.vitalLogs, v?.recordedAt),
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+      .slice(0, 5000);
+
+    const recordId = await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.referral.updateMany({
+        where: { id, status: r.status },
+        data: {
+          status: 'ARRIVED',
+          arrivedAt: now,
+          receivedById: user.id,
+          // Xe tới trước khi kịp bấm xác nhận: ghi nhận luôn người tiếp nhận
+          ...(r.status === 'PENDING' && { acceptedAt: now, acceptedById: user.id }),
+        },
+      });
+      if (count === 0)
+        throw new ConflictException('Ca này vừa được người khác cập nhật, hãy tải lại');
+      const record = await tx.medicalRecord.create({
+        data: {
+          code: generateCode('BA'),
+          patientId: r.patient.id,
+          facilityId: r.toFacility.id,
+          doctorId: user.id,
+          sourceReferralId: id,
+          encounterType: 'EMERGENCY',
+          visitAt: now,
+          chiefComplaint: `Chuyển tuyến từ ${r.fromFacility.name}: ${src.chiefComplaint}`.slice(
+            0,
+            500,
+          ),
+          symptoms,
+          // Sinh tồn khởi điểm: lần đo mới nhất trên xe (chỉ số xe không đo để trống — không trộn với
+          // số đo cũ); xe chưa đo lần nào thì lấy sinh tồn lúc khám tại tuyến dưới
+          ...(v
+            ? {
+                pulse: v.pulse,
+                systolicBp: v.systolicBp,
+                diastolicBp: v.diastolicBp,
+                spo2: v.spo2,
+                respiratoryRate: v.respiratoryRate,
+                temperature: v.temperature,
+              }
+            : {
+                pulse: src.pulse,
+                systolicBp: src.systolicBp,
+                diastolicBp: src.diastolicBp,
+                spo2: src.spo2,
+                respiratoryRate: src.respiratoryRate,
+                temperature: src.temperature,
+              }),
+          weightKg: src.weightKg,
+          heightCm: src.heightCm,
+          // Chẩn đoán làm việc kế thừa từ tuyến dưới — bác sĩ tuyến trên xác định lại trước khi ký
+          diagnoses: {
+            create: src.diagnoses.map((d) => ({
+              icdCode: d.icdCode,
+              isPrimary: d.isPrimary,
+              note: 'Chẩn đoán tuyến dưới',
+            })),
+          },
+        },
+        select: { id: true },
+      });
+      return record.id;
+    });
+
+    const updated = await this.prisma.referral.findUniqueOrThrow({
+      where: { id },
+      select: referralSelect,
+    });
+    await this.notifyChange(updated, user, 'arrive');
+    await this.audit.log({
+      userId: user.id,
+      action: 'UPDATE',
+      entityType: 'Referral',
+      entityId: id,
+      metadata: { action: 'arrive', recordId },
+    });
+    return { referral: this.toDto(updated), recordId, created: true };
+  }
+
   private async assertReceiver(id: string, user: AuthUser) {
     const r = await this.prisma.referral.findUnique({
       where: { id },
@@ -417,7 +546,7 @@ export class ReferralsService {
   private async notifyChange(
     r: ReferralRow,
     actor: AuthUser,
-    action: 'accept' | 'preparation' | 'reject' | 'cancel',
+    action: 'accept' | 'preparation' | 'reject' | 'cancel' | 'arrive',
   ) {
     const actorRow = await this.prisma.user.findUnique({
       where: { id: actor.id },
@@ -489,12 +618,14 @@ export class ReferralsService {
   }
 
   private toDto(r: ReferralRow) {
-    const { referredBy, escort, acceptedBy, sourceRecord, _count, vitalLogs, ...rest } = r;
+    const { referredBy, escort, acceptedBy, receivedBy, sourceRecord, _count, vitalLogs, ...rest } =
+      r;
     return {
       ...rest,
       referredBy: { id: referredBy.id, name: name(referredBy), phone: referredBy.phone },
       escort: escort && { id: escort.id, name: name(escort), phone: escort.phone },
       acceptedBy: acceptedBy && { id: acceptedBy.id, name: name(acceptedBy) },
+      receivedBy: receivedBy && { id: receivedBy.id, name: name(receivedBy) },
       interProvincial: r.fromFacility.commune.province.code !== r.toFacility.commune.province.code,
       vitalLogCount: _count.vitalLogs,
       latestVital: vitalLogs[0] ? toVitalDto(vitalLogs[0]) : null,

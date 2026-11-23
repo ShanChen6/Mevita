@@ -67,6 +67,7 @@ const recordSelect = {
       commune: { select: { fullName: true, province: { select: { fullName: true } } } },
     },
   },
+  sourceReferral: { select: { code: true, fromFacility: { select: { name: true } } } },
   diagnoses: {
     select: { icdCode: true, isPrimary: true, note: true, icd10: { select: { nameVi: true } } },
     orderBy: [{ isPrimary: 'desc' }, { icdCode: 'asc' }],

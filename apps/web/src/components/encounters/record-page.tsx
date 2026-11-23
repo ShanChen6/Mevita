@@ -5,7 +5,9 @@ import { Ambulance, ArrowLeft, History, ShieldAlert, ShieldCheck } from 'lucide-
 import { RecordCard } from '@/components/patient/record-card';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
+import { ReferralContext } from '@/components/referrals/referral-context';
 import { getFacilitySpecialties, getRecord, verifyRecord } from '@/lib/data/encounters';
+import { findReferral, findReferralVitals } from '@/lib/data/referrals';
 import type { MedicalRecordDetail, MedicalRecordItem } from '@/lib/data/types';
 import { ageAt, formatDate } from '@/lib/format';
 import { bloodType, encounterType, gender } from '@/lib/labels';
@@ -40,6 +42,12 @@ async function Integrity({ id }: { id: string }) {
       — có thể đã bị sửa sau khi ký.
     </p>
   );
+}
+
+/** Bối cảnh chuyển tuyến của hồ sơ tiếp nối — không có quyền xem phiếu thì bỏ qua. */
+async function SourceReferral({ id, portal }: { id: string; portal: string }) {
+  const [referral, vitals] = await Promise.all([findReferral(id), findReferralVitals(id)]);
+  return referral ? <ReferralContext referral={referral} vitals={vitals} portal={portal} /> : null;
 }
 
 async function Record({
@@ -93,6 +101,11 @@ async function Record({
         <Suspense>
           <Integrity id={record.id} />
         </Suspense>
+        {record.sourceReferral && (
+          <Suspense>
+            <SourceReferral id={record.sourceReferral.id} portal={portal} />
+          </Suspense>
+        )}
         <RecordCard record={toItem(record)} />
       </>
     );
@@ -102,6 +115,13 @@ async function Record({
   return (
     <>
       {header}
+      {record.sourceReferral && (
+        <Suspense
+          fallback={<div className="bg-muted/50 h-24 animate-pulse rounded-xl border" aria-busy />}
+        >
+          <SourceReferral id={record.sourceReferral.id} portal={portal} />
+        </Suspense>
+      )}
       <ExamForm key={record.updatedAt} record={record} specialties={specialties} />
     </>
   );

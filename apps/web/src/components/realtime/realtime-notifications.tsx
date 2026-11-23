@@ -29,6 +29,11 @@ export function RealtimeNotifications({ offset = 72 }: { offset?: number }) {
             .filter(Boolean)
             .join(' · '),
         });
+      else if (e.action === 'arrive')
+        toast.success(`${e.toFacility} đã tiếp nhận bệnh nhân ${e.patientName}`, {
+          id,
+          description: `Bàn giao xong ca ${e.code}${e.by ? ` — ${e.by}` : ''}.`,
+        });
       else if (e.action === 'preparation')
         toast.info(`${e.toFacility} cập nhật chuẩn bị cho ca ${e.code}`, {
           id,

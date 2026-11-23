@@ -11,7 +11,7 @@ import { PriorityBadge, ReferralStatusBadge } from '@/components/shared/status-b
 import { Button } from '@/components/ui/button';
 import { getSession } from '@/lib/auth/session';
 import { getReferral, getReferralVitals } from '@/lib/data/referrals';
-import { ageAt } from '@/lib/format';
+import { ageAt, formatTime } from '@/lib/format';
 import { bloodType, gender } from '@/lib/labels';
 
 async function Escort({ params }: { params: Promise<{ referralId: string }> }) {
@@ -83,8 +83,18 @@ async function Escort({ params }: { params: Promise<{ referralId: string }> }) {
       )}
       <ReferralLiveRefresh />
 
-      {active ? (
-        <EscortVitalsForm referralId={r.id} initial={vitals} />
+      {r.status === 'ARRIVED' && (
+        <p
+          className="rounded-lg bg-sky-50 p-3 text-sm text-sky-950 dark:bg-sky-500/10 dark:text-sky-100"
+          data-testid="handover"
+        >
+          <span className="font-semibold">Đã bàn giao bệnh nhân</span> cho {r.toFacility.name}
+          {r.arrivedAt && ` lúc ${formatTime(r.arrivedAt)}`}
+          {r.receivedBy && ` · ${r.receivedBy.name}`}. Các lần đo còn lưu tạm vẫn được gửi tự động.
+        </p>
+      )}
+      {active || r.status === 'ARRIVED' ? (
+        <EscortVitalsForm referralId={r.id} initial={vitals} readOnly={!active} />
       ) : (
         <p className="bg-muted rounded-lg p-4 text-sm">
           Phiếu chuyển tuyến đã kết thúc (
