@@ -473,6 +473,24 @@ describe('Bảo mật & phân quyền (e2e)', () => {
     }
     // Đối chứng: token ký đúng chuẩn thì hợp lệ (chứng tỏ các ca trên bị chặn vì đúng lý do)
     await call('get', '/admin/users', hs(claims)).expect(200);
+    // Trang ở origin lạ không mở được kênh realtime, kể cả với vé hợp lệ (chống CSWSH)
+    const t2 = (
+      (await call('post', '/realtime/ticket', 'staffA').expect(200)).body as { ticket: string }
+    ).ticket;
+    await expect(
+      new Promise((resolve, reject) => {
+        const s = io(`${url}/realtime`, {
+          auth: { token: t2 },
+          transports: ['websocket'],
+          extraHeaders: { Origin: 'https://evil.example' },
+          reconnection: false,
+          forceNew: true,
+        });
+        sockets.push(s);
+        s.on('connect', () => resolve(true));
+        s.on('connect_error', reject);
+      }),
+    ).rejects.toThrow();
     // Access token không dùng để mở kênh realtime
     await expect(
       new Promise((resolve, reject) => {

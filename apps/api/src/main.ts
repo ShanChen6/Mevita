@@ -12,6 +12,17 @@ async function bootstrap() {
   app.set('trust proxy', 1);
   const config = app.get<ConfigService<Env, true>>(ConfigService);
 
+  app.disable('x-powered-by');
+  // Header bảo mật cơ bản cho API JSON (không phục vụ HTML)
+  app.use((_req: unknown, res: { setHeader(k: string, v: string): void }, next: () => void) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+    if (config.get('NODE_ENV', { infer: true }) === 'production')
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    next();
+  });
   app.setGlobalPrefix('api');
   app.enableCors({
     origin: config.get('CORS_ORIGIN', { infer: true }).split(','),

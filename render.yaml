@@ -1,0 +1,39 @@
+# Render Blueprint — API Mevita (NestJS + Socket.io) chạy bằng Docker.
+# Render → New → Blueprint → chọn repo; điền các biến "sync: false" khi được hỏi. Hướng dẫn: docs/deployment.md
+services:
+  - type: web
+    name: mevita-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    region: singapore
+    plan: free
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Neon: chuỗi kết nối qua pooler (có "-pooler" trong host), kèm ?sslmode=require
+      - key: DATABASE_URL
+        sync: false
+      # Neon: chuỗi kết nối trực tiếp (không "-pooler") — dùng cho prisma migrate deploy lúc khởi động
+      - key: DIRECT_DATABASE_URL
+        sync: false
+      - key: DATABASE_POOL_MAX
+        value: '5'
+      # Phải TRÙNG với JWT_ACCESS_SECRET trên Vercel (openssl rand -base64 48)
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      # Địa chỉ web trên Vercel, VD https://mevita.vercel.app (nhiều địa chỉ: ngăn cách bằng dấu phẩy)
+      - key: CORS_ORIGIN
+        sync: false
+      # VD https://mevita-api.onrender.com/api
+      - key: API_PUBLIC_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

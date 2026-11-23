@@ -26,10 +26,26 @@ export const envSchema = z.object({
   CLOUDINARY_API_SECRET: optionalString,
 });
 
+/** Ràng buộc thêm khi chạy production — chặn cấu hình mặc định/không an toàn lọt lên máy chủ thật. */
+const productionRules = envSchema.superRefine((env, ctx) => {
+  if (env.NODE_ENV !== 'production') return;
+  const issue = (path: string, message: string) =>
+    ctx.addIssue({ code: 'custom', path: [path], message });
+  if (/change-me|ci-only|example/i.test(env.JWT_ACCESS_SECRET) || env.JWT_ACCESS_SECRET.length < 48)
+    issue(
+      'JWT_ACCESS_SECRET',
+      'Production cần khoá ngẫu nhiên ≥ 48 ký tự (VD: openssl rand -base64 48)',
+    );
+  if (env.CORS_ORIGIN.split(',').some((o) => !o.startsWith('https://')))
+    issue('CORS_ORIGIN', 'Production chỉ chấp nhận origin https:// (địa chỉ web trên Vercel)');
+  if (!env.API_PUBLIC_URL.startsWith('https://'))
+    issue('API_PUBLIC_URL', 'Production cần địa chỉ https:// công khai của API');
+});
+
 export type Env = z.infer<typeof envSchema>;
 
 export function validateEnv(config: Record<string, unknown>): Env {
-  const result = envSchema.safeParse(config);
+  const result = productionRules.safeParse(config);
   if (!result.success) {
     const issues = result.error.issues
       .map((issue) => `  - ${issue.path.join('.')}: ${issue.message}`)

@@ -1,0 +1,42 @@
+name: Database (production)
+
+# Chạy tay trên GitHub: Actions → Database (production) → Run workflow.
+# Cần secrets: PROD_DIRECT_DATABASE_URL (Neon, kết nối trực tiếp), SEED_DEMO_PASSWORD (nếu tạo demo).
+on:
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: 'Nạp danh mục (34 tỉnh, 3.321 xã, chuyên khoa, ICD-10)'
+        type: boolean
+        default: true
+      demo:
+        description: 'Tạo kịch bản DEMO (tài khoản demo, cơ sở y tế, hồ sơ mẫu)'
+        type: boolean
+        default: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      NODE_ENV: production
+      DATABASE_URL: ${{ secrets.PROD_DIRECT_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter @mevita/api...
+      - name: Migrate
+        run: pnpm db:deploy
+      - name: Seed danh mục
+        if: ${{ inputs.seed }}
+        run: pnpm db:seed
+      - name: Seed demo
+        if: ${{ inputs.demo }}
+        env:
+          SEED_DEMO: 'true'
+          SEED_DEMO_PASSWORD: ${{ secrets.SEED_DEMO_PASSWORD }}
+        run: pnpm db:seed

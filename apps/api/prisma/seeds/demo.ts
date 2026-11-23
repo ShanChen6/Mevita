@@ -1,5 +1,6 @@
 /**
- * Tài khoản & cơ sở y tế DEMO cho môi trường phát triển (không chạy khi NODE_ENV=production).
+ * Tài khoản & cơ sở y tế DEMO cho môi trường phát triển. Ở production chỉ chạy khi bật rõ ràng
+ * `SEED_DEMO=true` và đặt `SEED_DEMO_PASSWORD` riêng (bản demo trực tuyến cho buổi bảo vệ).
  * Kịch bản: Trạm Y tế Xã Mường Khương (Lào Cai) → BVĐK Tỉnh Lào Cai → BV Hữu nghị Việt Đức (Hà Nội).
  * Bộ dữ liệu mẫu đầy đủ cho buổi bảo vệ sẽ làm ở Task 6.2.
  */
@@ -134,10 +135,13 @@ const demoPatient = {
 };
 
 export async function seedDemo(prisma: PrismaClient) {
-  if (process.env.NODE_ENV === 'production') {
-    console.log('↷ Bỏ qua dữ liệu demo (NODE_ENV=production)');
+  const production = process.env.NODE_ENV === 'production';
+  if (production && process.env.SEED_DEMO !== 'true') {
+    console.log('↷ Bỏ qua dữ liệu demo (NODE_ENV=production; đặt SEED_DEMO=true để tạo bản demo)');
     return;
   }
+  if (production && (!process.env.SEED_DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD.length < 10))
+    throw new Error('Demo ở production cần SEED_DEMO_PASSWORD riêng, tối thiểu 10 ký tự');
   const password = process.env.SEED_DEMO_PASSWORD ?? 'Mevita@2026';
   const passwordHash = await hashPassword(password);
   const specialtyIds = new Map(
