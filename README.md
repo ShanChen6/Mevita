@@ -51,7 +51,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 | Bác sĩ BVĐK Tỉnh Lào Cai | `bs.binh@mevita.vn` |
 | Bác sĩ BVĐK Tỉnh Lào Cai | `bs.minh@mevita.vn` |
 | Bác sĩ BV Việt Đức       | `bs.duc@mevita.vn`  |
-| Quản trị                 | `admin@mevita.vn`   |
+| Quản trị / Sở Y tế       | `admin@mevita.vn`   |
 
 Ảnh cận lâm sàng: chưa điền `CLOUDINARY_*` thì API dùng **kho ảnh giả lập** (chỉ khi phát triển); điền `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` trong `apps/api/.env` để dùng Cloudinary thật ([chi tiết](docs/clinical-images.md)). Khi đã cấu hình đúng, `GET /api/health` trả về `"cloudinary": "connected"`.
 
@@ -73,6 +73,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 | `pnpm db:seed`                                      | Nạp danh mục: 34 tỉnh, 3.321 xã, 25 chuyên khoa |
 | `pnpm db:studio`                                    | Mở Prisma Studio                                |
 | `pnpm --filter @mevita/api icd10:import <file.csv>` | Nhập bảng ICD-10 chính thức                     |
+| `pnpm --filter @mevita/api sim:stats [--clear]`     | Tạo / xoá dữ liệu giả lập 180 ngày cho thống kê |
 
 ## Tài liệu
 
@@ -88,6 +89,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 - [Ảnh cận lâm sàng (Cloudinary)](docs/clinical-images.md)
 - [Kiến trúc real-time (Socket.io)](docs/realtime.md)
 - [Chuyển tuyến khẩn cấp: lệnh, điều phối, tiếp nhận & điều trị tiếp nối](docs/referrals.md)
+- [Thống kê & quản trị](docs/stats-admin.md)
 - [Sinh tồn trên xe chuyển viện (offline-first)](docs/escort-vitals.md)
 
 ## Nhánh làm việc

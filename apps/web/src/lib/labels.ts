@@ -133,3 +133,29 @@ export const clinicalImageType: Record<ClinicalImageType, string> = {
   ECG: 'Điện tim',
   OTHER: 'Khác',
 };
+
+/** Chương ICD-10 (tên rút gọn cho bảng thống kê) */
+export const icdChapter: Record<string, string> = {
+  I: 'Nhiễm trùng & ký sinh trùng',
+  II: 'U tân sinh',
+  III: 'Máu & miễn dịch',
+  IV: 'Nội tiết & chuyển hoá',
+  V: 'Tâm thần & hành vi',
+  VI: 'Thần kinh',
+  VII: 'Mắt',
+  VIII: 'Tai & xương chũm',
+  IX: 'Tuần hoàn',
+  X: 'Hô hấp',
+  XI: 'Tiêu hoá',
+  XII: 'Da & mô dưới da',
+  XIII: 'Cơ xương khớp',
+  XIV: 'Sinh dục – tiết niệu',
+  XV: 'Thai nghén & sinh đẻ',
+  XVI: 'Chu sinh',
+  XVII: 'Dị tật bẩm sinh',
+  XVIII: 'Triệu chứng bất thường',
+  XIX: 'Chấn thương & ngộ độc',
+  XX: 'Nguyên nhân bên ngoài',
+  XXI: 'Yếu tố sức khoẻ',
+  XXII: 'Mã đặc biệt',
+};

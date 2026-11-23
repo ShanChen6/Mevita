@@ -77,6 +77,7 @@ export const config = {
     '/commune/:path*',
     '/escort/:path*',
     '/province/:path*',
+    '/admin/:path*',
     '/login',
     '/register',
   ],

@@ -34,6 +34,9 @@ src/app/
 |            | `/province/referrals/[id]`  | Chi tiết ca, đếm ngược; xác nhận ê-kíp & biểu đồ sinh tồn     | 4.2, 4.4 |
 |            | `/province/appointments`    | Lịch hẹn khám chuyên khoa                                     | 2.3      |
 |            | `/province/records`         | Hồ sơ điều trị tiếp nối                                       | 5.1      |
+| Quản trị   | `/admin`                    | Thống kê: đặt lịch, chuyển tuyến, mô hình bệnh tật            | 5.2      |
+|            | `/admin/users`              | Tài khoản: tìm kiếm, khoá / mở khoá                           | 5.2      |
+|            | `/admin/audit`              | Nhật ký truy cập                                              | 5.2      |
 
 ## Ghi chú
 

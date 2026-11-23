@@ -464,3 +464,76 @@ export interface ReferralUpdatedEvent {
   by: string | null;
   at: string;
 }
+
+/** Thống kê toàn hệ thống (Task 5.2) */
+export interface StatsOverview {
+  range: { from: string; to: string; unit: 'day' | 'week' | 'month'; province: string | null };
+  kpis: {
+    appointments: number;
+    appointmentsCompleted: number;
+    cancelRate: number | null;
+    noShowRate: number | null;
+    visits: number;
+    communeVisits: number;
+    referrals: number;
+    communeReferralRate: number | null;
+    interProvincial: number;
+    arrived: number;
+    rejected: number;
+    cancelled: number;
+    active: number;
+    medianAcceptMinutes: number | null;
+    medianTransportMinutes: number | null;
+  };
+  appointmentsTrend: { bucket: string; status: AppointmentStatusValue; n: number }[];
+  referralsTrend: { bucket: string; n: number }[];
+  referralPriority: { priority: ReferralPriorityValue; n: number }[];
+  stations: {
+    id: string;
+    name: string;
+    province: string;
+    visits: number;
+    referrals: number;
+    rate: number | null;
+  }[];
+  provinces: {
+    code: string;
+    name: string;
+    visits: number;
+    referrals: number;
+    rate: number | null;
+  }[];
+  topDiagnoses: { code: string; name: string; chapter: string | null; n: number }[];
+  diseasePattern: {
+    chapters: string[];
+    rows: { province: string; name: string; total: number; shares: number[] }[];
+  };
+  flows: { fromName: string; toName: string; inter: boolean; n: number }[];
+}
+
+export interface AdminUser {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  fullName: string;
+  role: 'PATIENT' | 'COMMUNE_STAFF' | 'PROVINCE_STAFF' | 'ADMIN';
+  isActive: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  staffProfile: {
+    position: string;
+    academicTitle: string | null;
+    facility: { name: string };
+  } | null;
+}
+
+export interface AuditEntry {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  metadata: Record<string, unknown> | null;
+  ipAddress: string | null;
+  createdAt: string;
+  user: { id: string; fullName: string; email: string | null; role: string } | null;
+}

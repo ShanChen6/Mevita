@@ -43,11 +43,13 @@ Khoảng ân hạn là cần thiết: khi access token hết hạn, trình duy�
 
 **Lớp 1 — Web (`src/proxy.ts`)**: kiểm tra lạc quan trước khi render.
 
-| Đường dẫn                   | Vai trò                   |
-| --------------------------- | ------------------------- |
-| `/patient/**`               | `PATIENT`, `ADMIN`        |
-| `/commune/**`, `/escort/**` | `COMMUNE_STAFF`, `ADMIN`  |
-| `/province/**`              | `PROVINCE_STAFF`, `ADMIN` |
+| Đường dẫn      | Vai trò                                    |
+| -------------- | ------------------------------------------ |
+| `/patient/**`  | `PATIENT`, `ADMIN`                         |
+| `/commune/**`  | `COMMUNE_STAFF`, `ADMIN`                   |
+| `/escort/**`   | `COMMUNE_STAFF`, `PROVINCE_STAFF`, `ADMIN` |
+| `/province/**` | `PROVINCE_STAFF`, `ADMIN`                  |
+| `/admin/**`    | `ADMIN` (trang chủ của quản trị viên)      |
 
 Sai vai trò → chuyển về phân hệ của mình. Tham số `next` chỉ nhận đường dẫn nội bộ mà vai trò được phép (chống open redirect).
 

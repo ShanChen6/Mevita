@@ -5,7 +5,10 @@ import {
   ClipboardList,
   FileHeart,
   History,
+  BarChart3,
   LayoutDashboard,
+  ScrollText,
+  Users,
   Search,
   Siren,
   Stethoscope,
@@ -13,7 +16,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export type Portal = 'patient' | 'commune' | 'province';
+export type Portal = 'patient' | 'commune' | 'province' | 'admin';
 
 export interface NavItem {
   href: string;
@@ -72,6 +75,16 @@ export const portals: Record<Portal, PortalConfig> = {
       { href: '/province/patients', label: 'Tra cứu bệnh nhân', icon: Search },
       { href: '/province/encounters', label: 'Khám bệnh', icon: Stethoscope },
       { href: '/province/records', label: 'Hồ sơ điều trị', icon: FileHeart },
+    ],
+  },
+  admin: {
+    name: 'Quản trị · Sở Y tế',
+    shortName: 'Quản trị',
+    accentClass: 'bg-violet-600',
+    nav: [
+      { href: '/admin', label: 'Thống kê', icon: BarChart3, exact: true },
+      { href: '/admin/users', label: 'Tài khoản', icon: Users },
+      { href: '/admin/audit', label: 'Nhật ký truy cập', icon: ScrollText },
     ],
   },
 };

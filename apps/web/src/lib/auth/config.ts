@@ -10,8 +10,7 @@ export const roleHome: Record<UserRole, string> = {
   PATIENT: '/patient',
   COMMUNE_STAFF: '/commune',
   PROVINCE_STAFF: '/province',
-  // Chưa có phân hệ quản trị riêng (Task 5.2) — tạm vào trung tâm điều phối
-  ADMIN: '/province',
+  ADMIN: '/admin',
 };
 
 /** Vai trò được phép vào từng nhóm đường dẫn. ADMIN được vào mọi phân hệ. */
@@ -21,6 +20,7 @@ const protectedPrefixes: { prefix: string; roles: UserRole[] }[] = [
   // Bệnh viện tỉnh cũng chuyển ca lên tuyến trung ương và cử người đi kèm xe
   { prefix: '/escort', roles: ['COMMUNE_STAFF', 'PROVINCE_STAFF', 'ADMIN'] },
   { prefix: '/province', roles: ['PROVINCE_STAFF', 'ADMIN'] },
+  { prefix: '/admin', roles: ['ADMIN'] },
 ];
 
 const matches = (pathname: string, prefix: string) =>
