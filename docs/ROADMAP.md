@@ -116,7 +116,7 @@
 - [x] **Task 6.2: Tạo bộ Dữ liệu mẫu thực tế (Database Seeding)**
   - Import đầy đủ **34 Tỉnh/Thành và 3.321 Xã/Phường**.
   - Tạo sẵn kịch bản dữ liệu mẫu sinh động: VD *Trạm Y tế Xã Mường Khương (Tỉnh Lào Cai)* chuyển tuyến khẩn cấp bệnh nhân chấn thương sọ não lên *Bệnh viện Đa khoa Tỉnh Lào Cai*, hoặc chuyển liên tỉnh về *Bệnh viện Việt Đức (TP. Hà Nội)*.
-- [ ] **Task 6.3: Viết Tài liệu & Diễn tập Demo**
+- [x] **Task 6.3: Viết Tài liệu & Diễn tập Demo**
   - Hoàn thiện báo cáo khóa luận/đồ án (đặc tả yêu cầu, sơ đồ ERD, sơ đồ tuần tự luồng Socket.io).
   - Quay video dự phòng và chuẩn bị 2 thiết bị (1 Laptop đóng vai Bác sĩ Xã/Tỉnh, 1 Điện thoại đóng vai Nhân viên trên xe cứu thương) để Demo trực tiếp trước hội đồng.
 

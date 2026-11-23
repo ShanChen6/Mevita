@@ -9,3 +9,4 @@ docs/ROADMAP.md
 apps/api/prisma/data
 apps/api/prisma/migrations
 apps/api/src/generated
+docs/report/erd.md

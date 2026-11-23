@@ -57,26 +57,28 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 
 ## Lệnh thường dùng
 
-| Lệnh                                                | Mô tả                                                     |
-| --------------------------------------------------- | --------------------------------------------------------- |
-| `pnpm dev`                                          | Chạy song song web và api                                 |
-| `pnpm dev:web`                                      | Chỉ chạy web                                              |
-| `pnpm dev:api`                                      | Chỉ chạy api                                              |
-| `pnpm build`                                        | Build toàn bộ                                             |
-| `pnpm lint`                                         | ESLint toàn bộ                                            |
-| `pnpm typecheck`                                    | Kiểm tra kiểu TypeScript                                  |
-| `pnpm test`                                         | Chạy unit test                                            |
-| `pnpm format`                                       | Format code bằng Prettier                                 |
-| `pnpm db:up`                                        | Khởi động PostgreSQL (Docker Compose)                     |
-| `pnpm db:down`                                      | Dừng PostgreSQL                                           |
-| `pnpm db:migrate`                                   | Chạy migration (Prisma)                                   |
-| `pnpm db:seed`                                      | Nạp danh mục: 34 tỉnh, 3.321 xã, 25 chuyên khoa           |
-| `pnpm db:studio`                                    | Mở Prisma Studio                                          |
-| `pnpm --filter @mevita/api icd10:import <file.csv>` | Nhập bảng ICD-10 chính thức                               |
-| `pnpm --filter @mevita/api sim:stats [--clear]`     | Tạo / xoá dữ liệu giả lập 180 ngày cho thống kê           |
-| `pnpm --filter @mevita/api demo:reset`              | Dựng lại kịch bản demo ([chi tiết](docs/demo-data.md))    |
-| `pnpm --filter @mevita/api test:e2e`                | E2E API, gồm kiểm thử bảo mật (cần DB đã seed)            |
-| `pnpm --filter @mevita/api load:socket -- …`        | Kiểm thử chịu tải Socket.io ([chi tiết](docs/testing.md)) |
+| Lệnh                                                | Mô tả                                                                           |
+| --------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `pnpm dev`                                          | Chạy song song web và api                                                       |
+| `pnpm dev:web`                                      | Chỉ chạy web                                                                    |
+| `pnpm dev:api`                                      | Chỉ chạy api                                                                    |
+| `pnpm build`                                        | Build toàn bộ                                                                   |
+| `pnpm lint`                                         | ESLint toàn bộ                                                                  |
+| `pnpm typecheck`                                    | Kiểm tra kiểu TypeScript                                                        |
+| `pnpm test`                                         | Chạy unit test                                                                  |
+| `pnpm format`                                       | Format code bằng Prettier                                                       |
+| `pnpm db:up`                                        | Khởi động PostgreSQL (Docker Compose)                                           |
+| `pnpm db:down`                                      | Dừng PostgreSQL                                                                 |
+| `pnpm db:migrate`                                   | Chạy migration (Prisma)                                                         |
+| `pnpm db:seed`                                      | Nạp danh mục: 34 tỉnh, 3.321 xã, 25 chuyên khoa                                 |
+| `pnpm db:studio`                                    | Mở Prisma Studio                                                                |
+| `pnpm --filter @mevita/api icd10:import <file.csv>` | Nhập bảng ICD-10 chính thức                                                     |
+| `pnpm --filter @mevita/api sim:stats [--clear]`     | Tạo / xoá dữ liệu giả lập 180 ngày cho thống kê                                 |
+| `pnpm --filter @mevita/api demo:reset`              | Dựng lại kịch bản demo ([chi tiết](docs/demo-data.md))                          |
+| `pnpm demo:video -- --web <url> --api <url>`        | Tự quay video demo dự phòng ([chi tiết](docs/demo-runbook.md#5-video-dự-phòng)) |
+| `pnpm --filter @mevita/api erd`                     | Sinh lại ERD cho báo cáo từ `schema.prisma`                                     |
+| `pnpm --filter @mevita/api test:e2e`                | E2E API, gồm kiểm thử bảo mật (cần DB đã seed)                                  |
+| `pnpm --filter @mevita/api load:socket -- …`        | Kiểm thử chịu tải Socket.io ([chi tiết](docs/testing.md))                       |
 
 ## Tài liệu
 
@@ -96,6 +98,8 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 - [Điều phối thay cho từ chối: năng lực, gợi ý, leo thang](docs/coordination.md)
 - [Hành trình nhiều chặng Xã → Tỉnh → Trung ương](docs/journey.md)
 - [Dữ liệu mẫu & kịch bản demo](docs/demo-data.md)
+- [Kịch bản diễn tập & demo trước hội đồng](docs/demo-runbook.md)
+- [Tài liệu báo cáo: đặc tả yêu cầu, ERD, sơ đồ tuần tự Socket.io](docs/report/README.md)
 - [Thống kê & quản trị](docs/stats-admin.md)
 - [Kiểm thử bảo mật & chịu tải](docs/testing.md)
 - [Triển khai lên Internet (Neon · Render · Vercel)](docs/deployment.md)

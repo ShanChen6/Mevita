@@ -1,5 +1,7 @@
 # Thiết kế Cơ sở dữ liệu (Task 1.3)
 
+> ERD đầy đủ, luôn khớp schema hiện tại (gồm xe, vị trí GPS, năng lực tiếp nhận, hành trình nhiều chặng): [report/erd.md](report/erd.md).
+
 Schema nguồn: [`apps/api/prisma/schema.prisma`](../apps/api/prisma/schema.prisma) · Migration: [`apps/api/prisma/migrations`](../apps/api/prisma/migrations)
 
 - **CSDL:** PostgreSQL 17, truy cập qua Prisma 7 (driver adapter `pg`).

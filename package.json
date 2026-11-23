@@ -22,9 +22,12 @@
     "db:migrate": "pnpm --filter @mevita/api db:migrate",
     "db:deploy": "pnpm --filter @mevita/api db:deploy",
     "db:seed": "pnpm --filter @mevita/api db:seed",
-    "db:studio": "pnpm --filter @mevita/api db:studio"
+    "db:studio": "pnpm --filter @mevita/api db:studio",
+    "demo:reset": "pnpm --filter @mevita/api demo:reset",
+    "demo:video": "node scripts/demo-video/record.mjs"
   },
   "devDependencies": {
+    "playwright": "1.63.0",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14"
   }

@@ -15,3 +15,4 @@ build/
 .vercel
 *.pem
 .pnpm-debug.log*
+/demo-video/

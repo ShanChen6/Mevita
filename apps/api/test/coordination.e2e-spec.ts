@@ -280,8 +280,11 @@ describe('Điều phối & leo thang (e2e)', () => {
       station,
       'referral_escalated',
     );
+    // Chỉ xét ca của test này — CSDL dùng chung có thể còn ca chờ khác cũng bị quét
     const adminEvents: unknown[] = [];
-    admin.on('referral_escalated', (e: unknown) => adminEvents.push(e));
+    admin.on('referral_escalated', (e: { id: string }) => {
+      if (e.id === id) adminEvents.push(e);
+    });
     expect(await escalation.run()).toBeGreaterThanOrEqual(1);
     expect(await remind).toMatchObject({ id, escalated: 1 });
     expect(await toStation).toMatchObject({ id, level: 1 });
@@ -301,7 +304,14 @@ describe('Điều phối & leo thang (e2e)', () => {
     expect(others.map((o) => o.escalationLevel)).toEqual([0, 0]);
 
     await back(7);
-    const toAdmin = next<{ id: string; level: number }>(admin, 'referral_escalated');
+    const toAdmin = new Promise<{ id: string; level: number }>((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('timeout referral_escalated')), 2000);
+      admin.on('referral_escalated', (e: { id: string; level: number }) => {
+        if (e.id !== id) return;
+        clearTimeout(t);
+        resolve(e);
+      });
+    });
     await escalation.run();
     expect(await toAdmin).toMatchObject({ id, level: 2 });
 

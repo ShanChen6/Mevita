@@ -28,6 +28,7 @@
     "icd10:import": "tsx prisma/import-icd10.ts",
     "sim:stats": "tsx prisma/sim-stats.ts",
     "demo:reset": "tsx prisma/demo-reset.ts",
+    "erd": "tsx prisma/gen-erd.ts",
     "load:socket": "tsx test/load/socket-load.ts"
   },
   "dependencies": {
