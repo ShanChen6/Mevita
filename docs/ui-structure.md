@@ -37,7 +37,7 @@ src/app/
 
 ## Ghi chú
 
-- Đăng nhập/đăng ký (Task 2.1) và cổng bệnh nhân (Task 2.2), đặt lịch và tiếp đón lịch hẹn ở cả 2 tuyến (Task 2.3), tra cứu bệnh nhân (Task 3.1), khám bệnh & ký hồ sơ (Task 3.2) đã dùng **dữ liệu thật**. Các màn hình còn lại dùng **dữ liệu mẫu** trong `src/lib/mock-data.ts` (kịch bản Mường Khương → BVĐK Lào Cai) và gắn nhãn "Wireframe" chỉ rõ task sẽ hoàn thiện.
+- Đăng nhập/đăng ký (Task 2.1) và cổng bệnh nhân (Task 2.2), đặt lịch và tiếp đón lịch hẹn ở cả 2 tuyến (Task 2.3), tra cứu bệnh nhân (Task 3.1), khám bệnh & ký hồ sơ (Task 3.2), ảnh cận lâm sàng (Task 3.3) đã dùng **dữ liệu thật**. Các màn hình còn lại dùng **dữ liệu mẫu** trong `src/lib/mock-data.ts` (kịch bản Mường Khương → BVĐK Lào Cai) và gắn nhãn "Wireframe" chỉ rõ task sẽ hoàn thiện.
 - Nhãn tiếng Việt của các enum (trạng thái lịch hẹn, mức độ ưu tiên…) nằm ở `src/lib/labels.ts`, bám theo Prisma schema.
 - Thời gian hiển thị theo múi giờ `Asia/Ho_Chi_Minh` (`src/lib/format.ts`).
 - Bảo vệ route theo vai trò: xem [docs/auth.md](auth.md).

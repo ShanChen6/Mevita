@@ -3,17 +3,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import { useFieldArray, useForm, useWatch, type FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ImagePlus,
-  Loader2,
-  Plus,
-  Save,
-  Star,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Loader2, Plus, Save, Star, Trash2, X } from 'lucide-react';
 
 import { FormError } from '@/components/auth/form-message';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +20,7 @@ import { formatTime } from '@/lib/format';
 import { encounterType } from '@/lib/labels';
 import { cn } from '@/lib/utils';
 import { Icd10Picker } from './icd10-picker';
+import { ClinicalImageUploader } from './image-uploader';
 import { SignDialog } from './sign-dialog';
 import { VITALS, vitalLevel } from './vitals';
 
@@ -474,13 +465,11 @@ export function ExamForm({ record, specialties }: Props) {
         <CardHeader>
           <CardTitle>Cận lâm sàng</CardTitle>
           <CardDescription>
-            Tải ảnh xét nghiệm, siêu âm, X-quang lên Cloudinary — Task 3.3.
+            Ảnh phiếu xét nghiệm, siêu âm, X-quang — lưu ngay khi tải lên, không cần bấm Lưu nháp.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-muted-foreground flex items-center gap-2 rounded-lg border-2 border-dashed p-6 text-sm">
-            <ImagePlus className="size-5" aria-hidden /> Sắp có
-          </div>
+          <ClinicalImageUploader recordId={record.id} initialImages={record.clinicalImages} />
         </CardContent>
       </Card>
 

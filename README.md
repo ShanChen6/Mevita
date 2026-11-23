@@ -52,7 +52,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 | Bác sĩ BV Việt Đức       | `bs.duc@mevita.vn`  |
 | Quản trị                 | `admin@mevita.vn`   |
 
-Điền `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` trong `apps/api/.env` để bật lưu trữ ảnh cận lâm sàng. Khi đã cấu hình đúng, `GET /api/health` trả về `"cloudinary": "connected"`.
+Ảnh cận lâm sàng: chưa điền `CLOUDINARY_*` thì API dùng **kho ảnh giả lập** (chỉ khi phát triển); điền `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` trong `apps/api/.env` để dùng Cloudinary thật ([chi tiết](docs/clinical-images.md)). Khi đã cấu hình đúng, `GET /api/health` trả về `"cloudinary": "connected"`.
 
 ## Lệnh thường dùng
 
@@ -84,6 +84,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 - [Đặt lịch khám](docs/appointments.md)
 - [Tra cứu & tiếp nhận bệnh nhân](docs/patient-lookup.md)
 - [Khám bệnh, ICD-10 & ký hồ sơ](docs/medical-records.md)
+- [Ảnh cận lâm sàng (Cloudinary)](docs/clinical-images.md)
 
 ## Nhánh làm việc
 

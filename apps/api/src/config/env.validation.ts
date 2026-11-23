@@ -16,6 +16,10 @@ export const envSchema = z.object({
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(7),
   /** Khoảng ân hạn cho phép dùng lại refresh token vừa xoay vòng (các request song song) */
   REFRESH_REUSE_GRACE_SECONDS: z.coerce.number().int().min(0).max(120).default(30),
+  /** Địa chỉ công khai của API (dùng cho URL ảnh ở chế độ giả lập) */
+  API_PUBLIC_URL: z.string().url().default('http://localhost:4000/api'),
+  /** Thư mục lưu ảnh ở chế độ giả lập Cloudinary */
+  MEDIA_MOCK_DIR: z.string().default('.uploads'),
   CLOUDINARY_CLOUD_NAME: optionalString,
   CLOUDINARY_API_KEY: optionalString,
   CLOUDINARY_API_SECRET: optionalString,

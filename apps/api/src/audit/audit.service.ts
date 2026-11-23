@@ -14,6 +14,7 @@ export interface AuditEntry {
     | 'LOOKUP'
     | 'CREATE'
     | 'UPDATE'
+    | 'DELETE'
     | 'SIGN'
     | 'ACCESS_DENIED';
   entityType: string;

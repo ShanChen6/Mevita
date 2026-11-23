@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { AccessPolicyService } from '../access/access-policy.service.js';
 import { AuditService } from '../audit/audit.service.js';
+import { ClinicalImagesService } from '../clinical-images/clinical-images.service.js';
 import type { AuthUser } from '../auth/auth.types.js';
 import { verifyPassword } from '../auth/password.js';
 import type { Prisma } from '../generated/prisma/client.js';
@@ -85,7 +86,15 @@ const recordSelect = {
     orderBy: { sortOrder: 'asc' },
   },
   clinicalImages: {
-    select: { id: true, type: true, secureUrl: true, description: true, takenAt: true },
+    select: {
+      id: true,
+      type: true,
+      cloudinaryPublicId: true,
+      description: true,
+      takenAt: true,
+      width: true,
+      height: true,
+    },
     orderBy: { createdAt: 'asc' },
   },
 } satisfies Prisma.MedicalRecordSelect;
@@ -98,6 +107,7 @@ export class MedicalRecordsService {
     private readonly prisma: PrismaService,
     private readonly policy: AccessPolicyService,
     private readonly audit: AuditService,
+    private readonly images: ClinicalImagesService,
   ) {}
 
   /** Phiếu khám nháp đang mở tại cơ sở (hàng đợi khám). */
@@ -299,9 +309,10 @@ export class MedicalRecordsService {
   }
 
   private toDto(r: RecordRow) {
-    const { doctor, diagnoses, ...rest } = r;
+    const { doctor, diagnoses, clinicalImages, ...rest } = r;
     return {
       ...rest,
+      clinicalImages: clinicalImages.map((i) => this.images.toDto(i)),
       doctor: {
         id: doctor.id,
         fullName: doctor.fullName,

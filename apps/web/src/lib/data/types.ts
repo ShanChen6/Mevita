@@ -75,14 +75,19 @@ export interface MedicalRecordItem {
     instructions: string;
     durationDays: number | null;
   }[];
-  clinicalImages: {
-    id: string;
-    type: ClinicalImageType;
-    secureUrl: string;
-    thumbnailUrl: string;
-    description: string | null;
-    takenAt: string | null;
-  }[];
+  clinicalImages: ClinicalImage[];
+}
+
+/** Ảnh cận lâm sàng — `secureUrl` (ảnh gốc) và `thumbnailUrl` là URL có chữ ký do API cấp. */
+export interface ClinicalImage {
+  id: string;
+  type: ClinicalImageType;
+  secureUrl: string;
+  thumbnailUrl: string;
+  description: string | null;
+  takenAt: string | null;
+  width?: number | null;
+  height?: number | null;
 }
 
 export interface Page<T> {
@@ -276,11 +281,5 @@ export interface MedicalRecordDetail {
   };
   diagnoses: { icdCode: string; name: string; isPrimary: boolean; note: string | null }[];
   prescriptionItems: MedicalRecordItem['prescriptionItems'];
-  clinicalImages: {
-    id: string;
-    type: ClinicalImageType;
-    secureUrl: string;
-    description: string | null;
-    takenAt: string | null;
-  }[];
+  clinicalImages: ClinicalImage[];
 }

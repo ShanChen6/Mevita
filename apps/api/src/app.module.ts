@@ -11,6 +11,8 @@ import { EncountersModule } from './encounters/encounters.module.js';
 import { FacilitiesModule } from './facilities/facilities.module.js';
 import { Icd10Module } from './icd10/icd10.module.js';
 import { MedicalRecordsModule } from './medical-records/medical-records.module.js';
+import { ClinicalImagesModule } from './clinical-images/clinical-images.module.js';
+import { MediaModule } from './media/media.module.js';
 import { HealthController } from './health/health.controller.js';
 import { PatientsModule } from './patients/patients.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -28,6 +30,8 @@ import { PrismaModule } from './prisma/prisma.module.js';
     AuthModule,
     AccessModule,
     CloudinaryModule,
+    MediaModule,
+    ClinicalImagesModule,
     AdministrativeUnitsModule,
     PatientsModule,
     FacilitiesModule,

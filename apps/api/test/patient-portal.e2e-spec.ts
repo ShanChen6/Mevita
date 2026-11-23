@@ -273,9 +273,10 @@ describe('Cổng bệnh nhân (e2e)', () => {
       ],
       prescriptionItems: [{ drugName: 'Thuốc 3' }],
     });
-    expect(items[1].clinicalImages[0].thumbnailUrl).toContain(
-      '/upload/c_fill,w_240,h_240,q_auto,f_auto/',
-    );
+    // Ảnh gốc & thu nhỏ là URL có chữ ký do kho ảnh cấp (môi trường test: kho giả lập)
+    const image = items[1]?.clinicalImages[0];
+    expect(image?.thumbnailUrl).toMatch(/mock-cloudinary\/file\?.*v=thumb.*sig=/);
+    expect(image?.secureUrl).toMatch(/v=full/);
   });
 
   it('lịch sử khám phân trang theo con trỏ', async (ctx) => {

@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service.js';
+import { ClinicalImagesService } from '../clinical-images/clinical-images.service.js';
 import type { AuthUser } from '../auth/auth.types.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -86,7 +87,7 @@ const recordSelect = {
     select: {
       id: true,
       type: true,
-      secureUrl: true,
+      cloudinaryPublicId: true,
       description: true,
       takenAt: true,
       width: true,
@@ -98,14 +99,7 @@ const recordSelect = {
 
 type RecordRow = Prisma.MedicalRecordGetPayload<{ select: typeof recordSelect }>;
 
-/** Ảnh thu nhỏ qua biến đổi URL của Cloudinary (không cần tải ảnh gốc). */
-export function cloudinaryThumbnail(url: string, size = 240): string {
-  return url.includes('/upload/')
-    ? url.replace('/upload/', `/upload/c_fill,w_${size},h_${size},q_auto,f_auto/`)
-    : url;
-}
-
-function toRecordDto(r: RecordRow) {
+function toRecordDto(r: RecordRow, images: ClinicalImagesService) {
   const { doctor, facility, diagnoses, clinicalImages, ...rest } = r;
   return {
     ...rest,
@@ -126,10 +120,7 @@ function toRecordDto(r: RecordRow) {
       isPrimary: d.isPrimary,
       note: d.note,
     })),
-    clinicalImages: clinicalImages.map((img) => ({
-      ...img,
-      thumbnailUrl: cloudinaryThumbnail(img.secureUrl),
-    })),
+    clinicalImages: clinicalImages.map((img) => images.toDto(img)),
   };
 }
 
@@ -138,6 +129,7 @@ export class PatientsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly images: ClinicalImagesService,
   ) {}
 
   /** Thông tin định danh & tiền sử của bệnh nhân. Quyền truy cập đã được PatientAccessGuard kiểm tra. */
@@ -220,7 +212,7 @@ export class PatientsService {
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
     });
     const hasMore = rows.length > limit;
-    const items = rows.slice(0, limit).map(toRecordDto);
+    const items = rows.slice(0, limit).map((r) => toRecordDto(r, this.images));
     await this.audit.log({
       userId: viewer.id,
       action: 'VIEW',

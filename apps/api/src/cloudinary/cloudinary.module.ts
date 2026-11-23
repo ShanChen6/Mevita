@@ -34,6 +34,6 @@ import { CloudinaryService, type CloudinaryClient } from './cloudinary.service.j
     },
     CloudinaryService,
   ],
-  exports: [CloudinaryService],
+  exports: [CloudinaryService, CLOUDINARY],
 })
 export class CloudinaryModule {}

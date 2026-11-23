@@ -11,11 +11,6 @@ import { ageAt, formatDate } from '@/lib/format';
 import { bloodType, encounterType, gender } from '@/lib/labels';
 import { ExamForm } from './exam-form';
 
-const thumb = (url: string) =>
-  url.includes('/upload/')
-    ? url.replace('/upload/', '/upload/c_fill,w_240,h_240,q_auto,f_auto/')
-    : url;
-
 /** Chuyển chi tiết phiếu khám sang dạng thẻ lịch sử để hiển thị bản đã ký. */
 function toItem(r: MedicalRecordDetail): MedicalRecordItem {
   return {
@@ -26,7 +21,6 @@ function toItem(r: MedicalRecordDetail): MedicalRecordItem {
       type: 'COMMUNE_HEALTH_STATION',
       address: '',
     },
-    clinicalImages: r.clinicalImages.map((i) => ({ ...i, thumbnailUrl: thumb(i.secureUrl) })),
   };
 }
 
