@@ -14,7 +14,8 @@ import type { VehicleType } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RealtimeEvent } from '../realtime/realtime.events.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
-import { toVitalDto, vitalSelect } from './referral-vitals.service.js';
+import { JourneyService } from './journey.service.js';
+import { toVitalDto, vitalSelect } from './vital-dto.js';
 import { belowRecommendation } from './transport.js';
 import { loadLevel } from '../coordination/capacity.js';
 import { rankDestination } from '../coordination/ranking.js';
@@ -180,6 +181,7 @@ export class ReferralsService {
     private readonly realtime: RealtimeService,
     private readonly audit: AuditService,
     private readonly images: ClinicalImagesService,
+    private readonly journey: JourneyService,
   ) {}
 
   /**
@@ -434,7 +436,7 @@ export class ReferralsService {
       where: { id },
       select: referralSelect,
     });
-    const allowed =
+    const direct =
       referral &&
       (user.role === 'ADMIN' ||
         (!!user.facilityId &&
@@ -443,6 +445,8 @@ export class ReferralsService {
             referral.toFacility.id,
             referral.vehicle?.facility.id,
           ].includes(user.facilityId)));
+    // Cơ sở tham gia chặng khác của cùng hành trình (VD tuyến trung ương xem chặng xã → tỉnh) — Task A
+    const allowed = direct || (referral && (await this.journey.canView(user, id)));
     if (!referral || !allowed) throw new NotFoundException('Không tìm thấy phiếu chuyển tuyến');
     await this.audit.log({ userId: user.id, action: 'VIEW', entityType: 'Referral', entityId: id });
     const images = await this.prisma.clinicalImage.findMany({

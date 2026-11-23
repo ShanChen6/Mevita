@@ -47,6 +47,7 @@ export class StatsService {
       topDx,
       chapters,
       flows,
+      journeys,
     ] = await Promise.all([
       this.prisma.$queryRaw<{ bucket: Date; status: string; n: number }[]>`
           SELECT ${bucket('a.start_at')} AS bucket, a.status::text AS status, count(*)::int AS n
@@ -157,6 +158,17 @@ export class StatsService {
           JOIN provinces tp ON tp.code = tc.province_code
           WHERE r.created_at >= ${from} AND r.created_at < ${to} ${prov('fc')}
           GROUP BY 1, 2, 3 ORDER BY 4 DESC`,
+      // Hành trình nhiều chặng (Task A): lệnh lập từ hồ sơ tiếp nối = chặng chuyển tiếp
+      this.prisma.$queryRaw<{ onward: number; stabilize: number; fromHospital: number }[]>`
+          SELECT
+            count(*) FILTER (WHERE m.source_referral_id IS NOT NULL)::int AS onward,
+            count(*) FILTER (WHERE r.acceptance_type = 'STABILIZE_FORWARD')::int AS stabilize,
+            count(*) FILTER (WHERE f.type <> 'COMMUNE_HEALTH_STATION')::int AS "fromHospital"
+          FROM referrals r
+          JOIN medical_records m ON m.id = r.source_record_id
+          JOIN health_facilities f ON f.id = r.from_facility_id
+          JOIN communes fc ON fc.code = f.commune_code
+          WHERE r.created_at >= ${from} AND r.created_at < ${to} ${prov('fc')}`,
     ]);
 
     const sum = <T>(rows: T[], f: (r: T) => boolean, n: (r: T) => number) =>
@@ -239,6 +251,12 @@ export class StatsService {
         active: status('PENDING') + status('ACCEPTED'),
         medianAcceptMinutes: round(timings[0]?.accept ?? null),
         medianTransportMinutes: round(timings[0]?.transport ?? null, 0),
+        /** Chặng chuyển tiếp: bệnh viện chuyển tiếp ca đã nhận từ tuyến dưới */
+        onwardReferrals: journeys[0]?.onward ?? 0,
+        /** Tuyến trên nhận để ổn định rồi chuyển tiếp (không từ chối) */
+        stabilizeForward: journeys[0]?.stabilize ?? 0,
+        /** Lệnh do bệnh viện (tỉnh/TW) lập, không phải trạm xã */
+        hospitalReferrals: journeys[0]?.fromHospital ?? 0,
       },
       appointmentsTrend: appointments.map((r) => ({
         ...r,

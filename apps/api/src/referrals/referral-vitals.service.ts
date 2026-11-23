@@ -5,8 +5,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { AuthUser } from '../auth/auth.types.js';
-import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { JourneyService } from './journey.service.js';
+import { toVitalDto, vitalSelect } from './vital-dto.js';
 import { RealtimeEvent } from '../realtime/realtime.events.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import type { VitalEntryInput } from './referrals.schemas.js';
@@ -19,34 +20,6 @@ const CLOCK_SKEW_MS = 5 * 60_000;
 /** Ca đã kết thúc vẫn nhận dữ liệu đo trên đường được đồng bộ muộn (xe vừa ra khỏi vùng mất sóng). */
 const LATE_SYNC_MS = 6 * 3600_000;
 
-export const vitalSelect = {
-  id: true,
-  clientId: true,
-  recordedAt: true,
-  receivedAt: true,
-  pulse: true,
-  systolicBp: true,
-  diastolicBp: true,
-  spo2: true,
-  respiratoryRate: true,
-  temperature: true,
-  consciousness: true,
-  gcs: true,
-  note: true,
-  recordedBy: { select: { fullName: true, staffProfile: { select: { academicTitle: true } } } },
-} satisfies Prisma.ReferralVitalLogSelect;
-
-type VitalRow = Prisma.ReferralVitalLogGetPayload<{ select: typeof vitalSelect }>;
-
-export function toVitalDto({ recordedBy, ...v }: VitalRow) {
-  return {
-    ...v,
-    recordedBy: recordedBy.staffProfile?.academicTitle
-      ? `${recordedBy.staffProfile.academicTitle}. ${recordedBy.fullName}`
-      : recordedBy.fullName,
-  };
-}
-
 /**
  * Diễn biến sinh tồn trên xe chuyển viện (Task 4.3).
  * Ghi theo lô và idempotent theo `clientId`: thiết bị mất sóng lưu tạm rồi gửi lại cả lô khi có mạng.
@@ -56,6 +29,7 @@ export class ReferralVitalsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly realtime: RealtimeService,
+    private readonly journey: JourneyService,
   ) {}
 
   async list(referralId: string, user: Actor) {
@@ -72,7 +46,9 @@ export class ReferralVitalsService {
       (user.role === 'ADMIN' ||
         (!!user.facilityId &&
           [r.fromFacilityId, r.toFacilityId, r.vehicle?.facilityId].includes(user.facilityId)));
-    if (!r || !allowed) throw new NotFoundException('Không tìm thấy phiếu chuyển tuyến');
+    // Cơ sở ở chặng khác của cùng hành trình cũng xem được (Task A)
+    if (!r || !(allowed || (await this.journey.canView(user, referralId))))
+      throw new NotFoundException('Không tìm thấy phiếu chuyển tuyến');
     const rows = await this.prisma.referralVitalLog.findMany({
       where: { referralId },
       select: vitalSelect,

@@ -1,13 +1,22 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { Ambulance, ArrowLeft, History, ShieldAlert, ShieldCheck } from 'lucide-react';
+import {
+  Ambulance,
+  ArrowLeft,
+  ArrowUpRight,
+  History,
+  ShieldAlert,
+  ShieldCheck,
+} from 'lucide-react';
 
 import { RecordCard } from '@/components/patient/record-card';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
+import { awaitingForward, JourneyTimeline } from '@/components/referrals/journey-timeline';
 import { ReferralContext } from '@/components/referrals/referral-context';
 import { getFacilitySpecialties, getRecord, verifyRecord } from '@/lib/data/encounters';
-import { findReferral, findReferralVitals } from '@/lib/data/referrals';
+import { getSession } from '@/lib/auth/session';
+import { findJourney, findReferral, findReferralVitals } from '@/lib/data/referrals';
 import type { MedicalRecordDetail, MedicalRecordItem } from '@/lib/data/types';
 import { ageAt, formatDate } from '@/lib/format';
 import { bloodType, encounterType, gender } from '@/lib/labels';
@@ -45,9 +54,51 @@ async function Integrity({ id }: { id: string }) {
 }
 
 /** Bối cảnh chuyển tuyến của hồ sơ tiếp nối — không có quyền xem phiếu thì bỏ qua. */
-async function SourceReferral({ id, portal }: { id: string; portal: string }) {
-  const [referral, vitals] = await Promise.all([findReferral(id), findReferralVitals(id)]);
-  return referral ? <ReferralContext referral={referral} vitals={vitals} portal={portal} /> : null;
+async function SourceReferral({
+  id,
+  recordId,
+  portal,
+}: {
+  id: string;
+  recordId: string;
+  portal: string;
+}) {
+  const [referral, vitals, journey, session] = await Promise.all([
+    findReferral(id),
+    findReferralVitals(id),
+    findJourney(id),
+    getSession(),
+  ]);
+  if (!referral) return null;
+  // Ca nhận để ổn định: hồ sơ này là chặng cuối, chưa lập lệnh tiếp theo → nhắc chuyển tiếp (Task A)
+  const forward =
+    journey && awaitingForward(journey) && journey.hops.at(-1)?.continuationRecord?.id === recordId;
+  return (
+    <>
+      {forward && (
+        <div
+          role="status"
+          data-testid="forward-cta"
+          className="flex flex-wrap items-center gap-3 rounded-xl border border-sky-400 bg-sky-50 p-4 text-sm text-sky-950 dark:bg-sky-500/10 dark:text-sky-100"
+        >
+          <ArrowUpRight className="size-5 shrink-0 text-sky-600" aria-hidden />
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="font-semibold">Ca nhận để ổn định rồi chuyển tiếp</span>
+            {referral.forwardNote && <span>Kế hoạch: {referral.forwardNote}</span>}
+          </div>
+          <Button asChild>
+            <Link href={`/${portal}/referrals/new?record=${recordId}`}>
+              <Ambulance /> Lập lệnh chuyển tiếp
+            </Link>
+          </Button>
+        </div>
+      )}
+      {journey && journey.hops.length > 1 && (
+        <JourneyTimeline journey={journey} portal={portal} viewerFacilityId={session?.facilityId} />
+      )}
+      <ReferralContext referral={referral} vitals={vitals} portal={portal} />
+    </>
+  );
 }
 
 async function Record({
@@ -103,7 +154,7 @@ async function Record({
         </Suspense>
         {record.sourceReferral && (
           <Suspense>
-            <SourceReferral id={record.sourceReferral.id} portal={portal} />
+            <SourceReferral id={record.sourceReferral.id} recordId={record.id} portal={portal} />
           </Suspense>
         )}
         <RecordCard record={toItem(record)} />
@@ -119,7 +170,7 @@ async function Record({
         <Suspense
           fallback={<div className="bg-muted/50 h-24 animate-pulse rounded-xl border" aria-busy />}
         >
-          <SourceReferral id={record.sourceReferral.id} portal={portal} />
+          <SourceReferral id={record.sourceReferral.id} recordId={record.id} portal={portal} />
         </Suspense>
       )}
       <ExamForm key={record.updatedAt} record={record} specialties={specialties} />

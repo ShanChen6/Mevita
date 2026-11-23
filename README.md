@@ -93,6 +93,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 - [Chuyển tuyến khẩn cấp: lệnh, điều phối, tiếp nhận & điều trị tiếp nối](docs/referrals.md)
 - [Xe chuyển viện & theo dõi vị trí](docs/transport.md)
 - [Điều phối thay cho từ chối: năng lực, gợi ý, leo thang](docs/coordination.md)
+- [Hành trình nhiều chặng Xã → Tỉnh → Trung ương](docs/journey.md)
 - [Thống kê & quản trị](docs/stats-admin.md)
 - [Kiểm thử bảo mật & chịu tải](docs/testing.md)
 - [Triển khai lên Internet (Neon · Render · Vercel)](docs/deployment.md)

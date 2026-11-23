@@ -36,6 +36,10 @@ describe('Thống kê & quản trị (e2e)', () => {
   const token = {} as Record<'admin' | 'staff' | 'victim', string>;
   let victimId = '';
   let adminId = '';
+  let c1Id = '';
+  let hospitalId = '';
+  let patientId = '';
+  let staffId = '';
   const http = () => request(app.getHttpServer());
   const as = (k: keyof typeof token) => ({ Authorization: `Bearer ${token[k]}` });
   const overview = async (q = '') =>
@@ -165,7 +169,10 @@ describe('Thống kê & quản trị (e2e)', () => {
           ...(status === 'ARRIVED' && { arrivedAt: new Date(at(d).getTime() + 90 * 60_000) }),
         },
       });
-    await ref('C1', r1.id, 5, 'ARRIVED', 'CRITICAL');
+    c1Id = (await ref('C1', r1.id, 5, 'ARRIVED', 'CRITICAL')).id;
+    hospitalId = hospital.id;
+    patientId = patient.id;
+    staffId = staff.id;
     await ref('C2', r4.id, 21, 'REJECTED', 'URGENT');
 
     for (const k of ['admin', 'staff', 'victim'] as const)
@@ -232,6 +239,9 @@ describe('Thống kê & quản trị (e2e)', () => {
       rejected: 1,
       medianAcceptMinutes: 4,
       medianTransportMinutes: 90,
+      onwardReferrals: 0,
+      stabilizeForward: 0,
+      hospitalReferrals: 0,
     });
     expect(o.referralPriority).toEqual([
       { priority: 'CRITICAL', n: 1 },
@@ -276,6 +286,49 @@ describe('Thống kê & quản trị (e2e)', () => {
         .expect(200)
     ).body as Overview;
     expect(long.range.unit).toBe('month');
+  });
+
+  it('hành trình nhiều chặng: đếm chặng chuyển tiếp và ca nhận để ổn định (Task A)', async (ctx) => {
+    if (!dbReady) return ctx.skip();
+    // Tháng 2/2001: BV nhận ca C1 để ổn định → mở hồ sơ tiếp nối → chuyển tiếp đi nơi khác
+    await prisma.referral.update({
+      where: { id: c1Id },
+      data: { acceptanceType: 'STABILIZE_FORWARD' },
+    });
+    const cont = await prisma.medicalRecord.create({
+      data: {
+        code: `E2E${tag}CT`,
+        patientId,
+        doctorId: staffId,
+        facilityId: hospitalId,
+        visitAt: new Date('2001-02-03T03:00:00Z'),
+        chiefComplaint: 'Tiếp nối',
+        sourceReferralId: c1Id,
+      },
+    });
+    const [other] = ids.facilities;
+    await prisma.referral.create({
+      data: {
+        code: `E2E${tag}C3`,
+        patientId,
+        sourceRecordId: cont.id,
+        fromFacilityId: hospitalId,
+        toFacilityId: other,
+        referredById: staffId,
+        priority: 'CRITICAL',
+        reason: 'Chuyển tiếp',
+        clinicalSummary: 'Tóm tắt',
+        createdAt: new Date('2001-02-03T05:00:00Z'),
+      },
+    });
+    const feb = (
+      await http()
+        .get('/api/stats/overview?from=2001-02-01&to=2001-02-28')
+        .set(as('admin'))
+        .expect(200)
+    ).body as Overview;
+    expect(feb.kpis).toMatchObject({ referrals: 1, onwardReferrals: 1, hospitalReferrals: 1 });
+    expect((await overview()).kpis).toMatchObject({ stabilizeForward: 1, onwardReferrals: 0 });
   });
 
   it('quản trị tài khoản: tìm kiếm, khoá → mất phiên đăng nhập, mở khoá; nhật ký truy cập', async (ctx) => {

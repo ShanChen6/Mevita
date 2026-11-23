@@ -36,6 +36,7 @@ import {
 import { ReferralVitalsService } from './referral-vitals.service.js';
 import { ReferralsService } from './referrals.service.js';
 import { TransportService } from './transport.service.js';
+import { JourneyService } from './journey.service.js';
 
 @Controller('referrals')
 @Roles('COMMUNE_STAFF', 'PROVINCE_STAFF')
@@ -44,6 +45,7 @@ export class ReferralsController {
     private readonly referrals: ReferralsService,
     private readonly vitals: ReferralVitalsService,
     private readonly transport: TransportService,
+    private readonly journeys: JourneyService,
   ) {}
 
   /** Bệnh viện tuyến trên có thể chuyển tới (trong tỉnh trước, liên tỉnh sau) */
@@ -200,5 +202,11 @@ export class ReferralsController {
     @Body(new ZodValidationPipe(locationBatchSchema)) body: { entries: LocationEntryInput[] },
   ) {
     return this.transport.recordLocations(id, user, body.entries);
+  }
+
+  /** Hành trình nhiều chặng (Xã → Tỉnh → Trung ương) chứa phiếu này — Task A */
+  @Get(':id/journey')
+  journey(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+    return this.journeys.journey(id, user);
   }
 }

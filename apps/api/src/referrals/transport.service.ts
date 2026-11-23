@@ -10,6 +10,7 @@ import type { AuthUser } from '../auth/auth.types.js';
 import { hasCoords, haversineKm, travelMinutes, type LatLng } from '../common/geo.js';
 import { addMinutes } from '../common/vn-time.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { JourneyService } from './journey.service.js';
 import { RealtimeEvent } from '../realtime/realtime.events.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import type { LocationEntryInput } from './referrals.schemas.js';
@@ -49,6 +50,7 @@ export class TransportService {
     private readonly realtime: RealtimeService,
     private readonly referrals: ReferralsService,
     private readonly audit: AuditService,
+    private readonly journey: JourneyService,
   ) {}
 
   private async myFacility(user: AuthUser) {
@@ -353,7 +355,9 @@ export class TransportService {
       (user.role === 'ADMIN' ||
         (!!user.facilityId &&
           [r.fromFacilityId, r.toFacilityId, r.vehicle?.facilityId].includes(user.facilityId)));
-    if (!r || !ok) throw new NotFoundException('Không tìm thấy phiếu chuyển tuyến');
+    // Cơ sở ở chặng khác của cùng hành trình cũng xem được (Task A)
+    if (!r || !(ok || (await this.journey.canView(user, id))))
+      throw new NotFoundException('Không tìm thấy phiếu chuyển tuyến');
     return this.prisma.referralLocation.findMany({
       where: { referralId: id },
       select: {

@@ -5,11 +5,18 @@ import { ReferralVitalsService } from './referral-vitals.service.js';
 import { ReferralsController } from './referrals.controller.js';
 import { ReferralsService } from './referrals.service.js';
 import { TransportService } from './transport.service.js';
+import { JourneyService } from './journey.service.js';
 
 @Module({
   imports: [ClinicalImagesModule],
   controllers: [ReferralsController],
-  providers: [ReferralsService, ReferralVitalsService, ReferralVitalsGateway, TransportService],
+  providers: [
+    ReferralsService,
+    ReferralVitalsService,
+    ReferralVitalsGateway,
+    TransportService,
+    JourneyService,
+  ],
   exports: [ReferralsService, ReferralVitalsService],
 })
 export class ReferralsModule {}

@@ -82,7 +82,7 @@ async function Dashboard({ searchParams }: { searchParams: SearchParams }) {
         <StatCard
           label="Phiếu chuyển tuyến"
           value={fmt(k.referrals)}
-          hint={`Liên tỉnh: ${fmt(k.interProvincial)}`}
+          hint={`Liên tỉnh ${fmt(k.interProvincial)} · chặng chuyển tiếp ${fmt(k.onwardReferrals)} · nhận để ổn định ${fmt(k.stabilizeForward)}`}
           icon={Ambulance}
         />
         <StatCard

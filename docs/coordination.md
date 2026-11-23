@@ -10,7 +10,7 @@ Bệnh viện quá tải là chuyện thường ngày — vì vậy Mevita **kh�
 | Thường          | Tiếp nhận, hoặc **Đề nghị chuyển nơi khác** — bắt buộc **lý do chuyên môn** (không có chuyên khoa / thiết bị / chưa có chỉ định / khác) và **cơ sở đề xuất cụ thể**. _Quá tải không phải lý do hợp lệ._                | Từ chối không kèm phương án |
 
 - Tuyến dưới nhận ngay kế hoạch chuyển tiếp hoặc đề xuất; với đề nghị chuyển có nút **"Chuyển tới {cơ sở đề xuất}"** mở sẵn form lệnh mới với bệnh viện đó.
-- Sau khi tiếp nhận để ổn định, bệnh viện lập lệnh chuyển tiếp từ hồ sơ điều trị tiếp nối (Task 5.1) như một lệnh chuyển tuyến bình thường.
+- Sau khi tiếp nhận để ổn định, bệnh viện lập lệnh chuyển tiếp từ hồ sơ điều trị tiếp nối (Task 5.1) như một lệnh chuyển tuyến bình thường — xem [journey.md](journey.md) cho hành trình nhiều chặng.
 
 ## 2. Năng lực tiếp nhận & mức tải
 

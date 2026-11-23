@@ -8,6 +8,7 @@ import { ACCESS_COOKIE } from '@/lib/auth/config';
 import type {
   CoordinationOverview,
   FacilityCapacity,
+  Journey,
   PickupRequest,
   Referral,
   ReferralDestination,
@@ -79,6 +80,18 @@ export async function findReferralVitals(id: string): Promise<VitalLog[]> {
     return await apiFetch<VitalLog[]>(`/referrals/${id}/vitals`, { token });
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 403)) return [];
+    throw error;
+  }
+}
+
+/** Hành trình nhiều chặng chứa phiếu này; null khi không xem được (Task A). */
+export async function findJourney(id: string): Promise<Journey | null> {
+  const token = (await cookies()).get(ACCESS_COOKIE)?.value;
+  if (!token || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  try {
+    return await apiFetch<Journey>(`/referrals/${id}/journey`, { token });
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 404 || error.status === 403)) return null;
     throw error;
   }
 }

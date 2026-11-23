@@ -6,7 +6,12 @@ import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getRecord } from '@/lib/data/encounters';
-import { getDestinations, getEscorts, getTransportOptions } from '@/lib/data/referrals';
+import {
+  findReferral,
+  getDestinations,
+  getEscorts,
+  getTransportOptions,
+} from '@/lib/data/referrals';
 import { ageAt } from '@/lib/format';
 import { gender } from '@/lib/labels';
 import { ReferralForm } from './referral-form';
@@ -38,11 +43,18 @@ async function Content({
   }
   const record = await getRecord(recordId);
   const priority = record.encounterType === 'EMERGENCY' ? 'CRITICAL' : 'URGENT';
-  const [destinations, escorts, transport] = await Promise.all([
+  const [destinations, escorts, transport, previous] = await Promise.all([
     getDestinations(priority),
     getEscorts(),
     getTransportOptions(),
+    // Hồ sơ tiếp nối của ca nhận để ổn định → chặng chuyển tiếp (Task A)
+    record.sourceReferral ? findReferral(record.sourceReferral.id) : null,
   ]);
+  const forward =
+    previous?.acceptanceType === 'STABILIZE_FORWARD' &&
+    previous.toFacility.id === record.facility.id
+      ? previous
+      : null;
   const now = new Date().toISOString();
   const primary = record.diagnoses.find((d) => d.isPrimary);
   const p = record.patient;
@@ -68,6 +80,16 @@ async function Content({
           <span className="font-semibold">Dị ứng:</span> {p.allergies}
         </p>
       )}
+      {forward && (
+        <p
+          data-testid="forward-banner"
+          className="rounded-lg border border-sky-300 bg-sky-50 p-3 text-sm text-sky-950 dark:bg-sky-500/10 dark:text-sky-100"
+        >
+          <span className="font-semibold">Chặng chuyển tiếp</span> của lệnh {forward.code} (
+          {forward.fromFacility.name} → {forward.toFacility.name}). Toàn bộ hành trình và diễn biến
+          các chặng trước sẽ được tuyến trên xem cùng phiếu này.
+        </p>
+      )}
       <ReferralForm
         // Dựng lại form khi đổi phiếu khám / bệnh viện chọn sẵn (Next giữ trạng thái trang cùng đường dẫn)
         key={`${record.id}-${typeof to === 'string' ? to : ''}`}
@@ -78,9 +100,11 @@ async function Content({
         transport={transport}
         initialTo={typeof to === 'string' ? to : undefined}
         defaults={{
-          reason: primary
-            ? `${primary.icdCode} ${primary.name} — vượt khả năng chuyên môn, cần điều trị tuyến trên`
-            : record.chiefComplaint,
+          reason: forward?.forwardNote
+            ? `Chuyển tiếp theo kế hoạch: ${forward.forwardNote}`
+            : primary
+              ? `${primary.icdCode} ${primary.name} — vượt khả năng chuyên môn, cần điều trị tuyến trên`
+              : record.chiefComplaint,
           clinicalSummary: buildClinicalSummary(record, now),
           initialTreatment: buildInitialTreatment(record),
           priority,

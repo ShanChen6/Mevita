@@ -605,6 +605,10 @@ export interface StatsOverview {
     active: number;
     medianAcceptMinutes: number | null;
     medianTransportMinutes: number | null;
+    /** Task A: lệnh lập từ hồ sơ tiếp nối (chặng 2 trở đi) */
+    onwardReferrals: number;
+    stabilizeForward: number;
+    hospitalReferrals: number;
   };
   appointmentsTrend: { bucket: string; status: AppointmentStatusValue; n: number }[];
   referralsTrend: { bucket: string; n: number }[];
@@ -748,4 +752,57 @@ export interface VehicleLocationEvent {
   etaAt: string | null;
   remainingKm: number | null;
   speedKmh: number | null;
+}
+
+/** Hành trình chuyển tuyến nhiều chặng (Task A) — GET /referrals/:id/journey */
+export interface JourneyFacility {
+  id: string;
+  name: string;
+  type: string;
+  province: string;
+}
+export interface JourneyHop {
+  index: number;
+  id: string;
+  code: string;
+  status: ReferralStatusValue;
+  priority: ReferralPriorityValue;
+  reason: string;
+  createdAt: string;
+  departedAt: string | null;
+  acceptedAt: string | null;
+  arrivedAt: string | null;
+  cancelledAt: string | null;
+  estimatedArrivalAt: string | null;
+  acceptanceType: 'READY' | 'STABILIZE_FORWARD' | null;
+  forwardNote: string | null;
+  rejectionReason: string | null;
+  redirectFacility: { id: string; name: string } | null;
+  transportMode: TransportModeValue | null;
+  vehicle: string | null;
+  from: JourneyFacility;
+  to: JourneyFacility;
+  interProvincial: boolean;
+  sourceRecord: { id: string; code: string; visitAt: string };
+  continuationRecord: {
+    id: string;
+    code: string;
+    status: 'DRAFT' | 'FINALIZED';
+    visitAt: string;
+  } | null;
+  vitals: VitalLog[];
+}
+export interface Journey {
+  origin: {
+    facility: { id: string; name: string; province: string };
+    recordId: string;
+    recordCode: string;
+    visitAt: string;
+    chiefComplaint: string;
+    diagnosis: { icdCode: string; name: string } | null;
+  };
+  current: string;
+  completed: boolean;
+  totalMinutes: number | null;
+  hops: JourneyHop[];
 }

@@ -844,4 +844,190 @@ describe('Chuyển tuyến khẩn cấp (e2e)', () => {
       await http().post(`/api/referrals/${id}/arrive`).set(as('hospital')).expect(409);
     });
   });
+
+  describe('hành trình nhiều chặng Xã → Tỉnh → Trung ương (Task A)', () => {
+    interface Journey {
+      origin: { facility: { id: string }; recordId: string; diagnosis: { icdCode: string } | null };
+      current: string;
+      completed: boolean;
+      totalMinutes: number | null;
+      hops: {
+        index: number;
+        id: string;
+        status: string;
+        acceptanceType: string | null;
+        forwardNote: string | null;
+        from: { id: string };
+        to: { id: string };
+        interProvincial: boolean;
+        sourceRecord: { id: string };
+        continuationRecord: { id: string } | null;
+        vitals: { spo2: number | null }[];
+      }[];
+    }
+
+    it('tỉnh ổn định rồi chuyển tiếp lên TW: cả chuỗi xem được, đúng thứ tự, kèm sinh tồn từng chặng', async (ctx) => {
+      if (!dbReady) return ctx.skip();
+      const record = await prisma.medicalRecord.create({
+        data: {
+          code: `E2E-${tag}-J`,
+          patientId,
+          doctorId: ids.users[0],
+          facilityId: fac.station,
+          encounterType: 'EMERGENCY',
+          chiefComplaint: 'Đa chấn thương',
+          diagnoses: { create: { icdCode: 'S06.5', isPrimary: true } },
+        },
+      });
+      // Chặng 1: Trạm → BV tỉnh (nhận để ổn định rồi chuyển tiếp)
+      const hop1 = (
+        (
+          await http()
+            .post('/api/referrals')
+            .set(as('commune'))
+            .send(body({ sourceRecordId: record.id }))
+            .expect(201)
+        ).body as { referral: { id: string } }
+      ).referral.id;
+      await http()
+        .post(`/api/referrals/${hop1}/vitals`)
+        .set(as('nurse'))
+        .send({
+          entries: [{ clientId: randomUUID(), recordedAt: new Date().toISOString(), spo2: 88 }],
+        })
+        .expect(200);
+      const plan = 'Đặt nội khí quản, truyền máu rồi chuyển BV Trung ương phẫu thuật thần kinh';
+      await http()
+        .post(`/api/referrals/${hop1}/accept`)
+        .set(as('hospital'))
+        .send({ acceptanceType: 'STABILIZE_FORWARD', forwardNote: plan })
+        .expect(200);
+      const arrived = (
+        await http().post(`/api/referrals/${hop1}/arrive`).set(as('hospital')).expect(200)
+      ).body as { recordId: string };
+
+      // Trước khi có chặng 2, TW không liên quan → không xem được
+      await http().get(`/api/referrals/${hop1}/journey`).set(as('central')).expect(404);
+
+      // Chặng 2: BV tỉnh lập lệnh từ hồ sơ tiếp nối → BV TW (liên tỉnh)
+      const hop2 = (
+        (
+          await http()
+            .post('/api/referrals')
+            .set(as('hospital'))
+            .send(
+              body({
+                sourceRecordId: arrived.recordId,
+                toFacilityId: fac.central,
+                escortId: undefined,
+                reason: plan,
+              }),
+            )
+            .expect(201)
+        ).body as { referral: { id: string } }
+      ).referral.id;
+      await http().post(`/api/referrals/${hop2}/accept`).set(as('central')).send({}).expect(200);
+      await http().post(`/api/referrals/${hop2}/arrive`).set(as('central')).expect(200);
+
+      // Xem từ chặng nào cũng ra cùng một hành trình
+      const fromFirst = (
+        await http().get(`/api/referrals/${hop1}/journey`).set(as('commune')).expect(200)
+      ).body as Journey;
+      const fromLast = (
+        await http().get(`/api/referrals/${hop2}/journey`).set(as('central')).expect(200)
+      ).body as Journey;
+      expect(fromFirst.hops.map((h) => h.id)).toEqual([hop1, hop2]);
+      expect(fromLast.hops.map((h) => h.id)).toEqual([hop1, hop2]);
+      expect(fromLast).toMatchObject({
+        current: hop2,
+        completed: true,
+        origin: {
+          facility: { id: fac.station },
+          recordId: record.id,
+          diagnosis: { icdCode: 'S06.5' },
+        },
+        hops: [
+          {
+            index: 1,
+            status: 'ARRIVED',
+            acceptanceType: 'STABILIZE_FORWARD',
+            forwardNote: plan,
+            from: { id: fac.station },
+            to: { id: fac.hospital },
+            interProvincial: false,
+            continuationRecord: { id: arrived.recordId },
+            vitals: [{ spo2: 88 }],
+          },
+          {
+            index: 2,
+            status: 'ARRIVED',
+            from: { id: fac.hospital },
+            to: { id: fac.central },
+            interProvincial: true,
+            sourceRecord: { id: arrived.recordId },
+          },
+        ],
+      });
+      expect(fromLast.totalMinutes).toBeGreaterThanOrEqual(0);
+
+      // TW (chặng 2) xem được phiếu chặng 1 để biết diễn biến ban đầu; trạm xã cũng theo dõi được chặng 2
+      await http().get(`/api/referrals/${hop1}`).set(as('central')).expect(200);
+      await http().get(`/api/referrals/${hop1}/vitals`).set(as('central')).expect(200);
+      await http().get(`/api/referrals/${hop1}/locations`).set(as('central')).expect(200);
+      await http().get(`/api/referrals/${hop1}/vitals`).set(as('other')).expect(404);
+      await http().get(`/api/referrals/${hop2}`).set(as('commune')).expect(200);
+      // Cơ sở ngoài chuỗi vẫn bị chặn
+      await http().get(`/api/referrals/${hop1}/journey`).set(as('other')).expect(404);
+      await http().get(`/api/referrals/${hop2}`).set(as('other')).expect(404);
+    });
+
+    it('lệnh bị huỷ ở chặng sau không che lệnh đang hiệu lực', async (ctx) => {
+      if (!dbReady) return ctx.skip();
+      const record = await prisma.medicalRecord.create({
+        data: {
+          code: `E2E-${tag}-J2`,
+          patientId,
+          doctorId: ids.users[0],
+          facilityId: fac.station,
+          chiefComplaint: 'Khó thở',
+        },
+      });
+      const hop1 = (
+        (
+          await http()
+            .post('/api/referrals')
+            .set(as('commune'))
+            .send(body({ sourceRecordId: record.id }))
+            .expect(201)
+        ).body as { referral: { id: string } }
+      ).referral.id;
+      await http().post(`/api/referrals/${hop1}/accept`).set(as('hospital')).send({}).expect(200);
+      const cont = (
+        (await http().post(`/api/referrals/${hop1}/arrive`).set(as('hospital')).expect(200))
+          .body as { recordId: string }
+      ).recordId;
+      const mk = async () =>
+        (
+          (
+            await http()
+              .post('/api/referrals')
+              .set(as('hospital'))
+              .send(body({ sourceRecordId: cont, toFacilityId: fac.central, escortId: undefined }))
+              .expect(201)
+          ).body as { referral: { id: string } }
+        ).referral.id;
+      // Lệnh đầu bị huỷ (chọn nhầm bệnh viện) rồi lập lại — đang có lệnh hiệu lực thì không lập song song
+      const cancelled = await mk();
+      await http()
+        .post(`/api/referrals/${cancelled}/cancel`)
+        .set(as('hospital'))
+        .send({ reason: 'Chọn nhầm bệnh viện' })
+        .expect(200);
+      const active = await mk();
+      const j = (await http().get(`/api/referrals/${hop1}/journey`).set(as('hospital')).expect(200))
+        .body as Journey;
+      expect(j.hops.map((h) => h.id)).toEqual([hop1, active]);
+      expect(j.completed).toBe(false);
+    });
+  });
 });

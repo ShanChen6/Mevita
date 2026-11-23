@@ -28,8 +28,14 @@ function Fit({ points }: { points: LatLngTuple[] }) {
   const key = points.map((p) => p.join(',')).join(';');
   useEffect(() => {
     if (points.length === 0) return;
-    if (points.length === 1) map.setView(points[0]!, 13);
-    else map.fitBounds(points as LatLngBoundsExpression, { padding: [32, 32], maxZoom: 15 });
+    // Không chạy hiệu ứng: rời trang giữa lúc zoom động làm Leaflet lỗi `_leaflet_pos`
+    if (points.length === 1) map.setView(points[0]!, 13, { animate: false });
+    else
+      map.fitBounds(points as LatLngBoundsExpression, {
+        padding: [32, 32],
+        maxZoom: 15,
+        animate: false,
+      });
     // Chỉ căn lại khi tập điểm mốc thay đổi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, key]);
@@ -56,6 +62,7 @@ export default function VehicleMap({
       center={center}
       zoom={10}
       scrollWheelZoom={false}
+      zoomAnimation={false}
       className={`${className} w-full rounded-lg border`}
       attributionControl
     >

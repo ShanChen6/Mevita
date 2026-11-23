@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getSession } from '@/lib/auth/session';
 import {
+  findJourney,
   findReferralTrack,
   getDestinations,
   getReferral,
@@ -29,6 +30,7 @@ import { ageAt, formatDateTime, formatDecimal } from '@/lib/format';
 import { bloodType, encounterType, gender } from '@/lib/labels';
 import { CancelReferralButton } from './cancel-referral-button';
 import { EtaCountdown } from './eta-countdown';
+import { awaitingForward, JourneyTimeline } from './journey-timeline';
 import { LiveVitalsPanel } from './live-vitals-panel';
 import { VehicleTrackingPanel } from './vehicle-tracking-panel';
 import { ReferralResponse } from './referral-response';
@@ -74,11 +76,12 @@ async function Detail({
 }) {
   await connection();
   const { id } = await params;
-  const [r, vitals, session, track] = await Promise.all([
+  const [r, vitals, session, track, journey] = await Promise.all([
     getReferral(id),
     getReferralVitals(id),
     getSession(),
     findReferralTrack(id),
+    findJourney(id),
   ]);
   const viewerFacility = session?.facilityId;
   const canRespond = r.toFacility.id === viewerFacility || session?.role === 'ADMIN';
@@ -150,6 +153,11 @@ async function Detail({
         canRespond={canRespond}
         redirectOptions={redirectOptions}
       />
+
+      {/* Hành trình nhiều chặng (Task A) — chỉ hiện khi có hơn một chặng hoặc đang chờ chuyển tiếp */}
+      {journey && (journey.hops.length > 1 || awaitingForward(journey)) && (
+        <JourneyTimeline journey={journey} portal={portal} viewerFacilityId={viewerFacility} />
+      )}
 
       {(r.transportMode || track.length > 0) && (
         <VehicleTrackingPanel referral={r} initialTrack={track} now={now} />
