@@ -61,12 +61,17 @@ export class ReferralVitalsService {
   async list(referralId: string, user: Actor) {
     const r = await this.prisma.referral.findUnique({
       where: { id: referralId },
-      select: { fromFacilityId: true, toFacilityId: true },
+      select: {
+        fromFacilityId: true,
+        toFacilityId: true,
+        vehicle: { select: { facilityId: true } },
+      },
     });
     const allowed =
       r &&
       (user.role === 'ADMIN' ||
-        (!!user.facilityId && [r.fromFacilityId, r.toFacilityId].includes(user.facilityId)));
+        (!!user.facilityId &&
+          [r.fromFacilityId, r.toFacilityId, r.vehicle?.facilityId].includes(user.facilityId)));
     if (!r || !allowed) throw new NotFoundException('Không tìm thấy phiếu chuyển tuyến');
     const rows = await this.prisma.referralVitalLog.findMany({
       where: { referralId },
@@ -93,10 +98,16 @@ export class ReferralVitalsService {
         fromFacilityId: true,
         toFacilityId: true,
         escortId: true,
+        vehicle: { select: { facilityId: true } },
       },
     });
     if (!r) throw new NotFoundException('Không tìm thấy phiếu chuyển tuyến');
-    if (r.fromFacilityId !== user.facilityId && r.escortId !== user.id)
+    // Ghi: cơ sở chuyển đi, người đi kèm, hoặc kíp xe của cơ sở đã cử xe đón
+    if (
+      r.fromFacilityId !== user.facilityId &&
+      r.escortId !== user.id &&
+      (!user.facilityId || r.vehicle?.facilityId !== user.facilityId)
+    )
       throw new ForbiddenException('Chỉ nhân viên cơ sở chuyển đi mới cập nhật được sinh tồn');
 
     const now = Date.now();
@@ -140,8 +151,8 @@ export class ReferralVitalsService {
         orderBy: { recordedAt: 'asc' },
       });
       const payload = { referralId, code: r.code, vitals: created.map(toVitalDto) };
-      await this.realtime.emitToFacility(r.toFacilityId, RealtimeEvent.VitalUpdate, payload);
-      await this.realtime.emitToFacility(r.fromFacilityId, RealtimeEvent.VitalUpdate, payload);
+      for (const f of new Set([r.toFacilityId, r.fromFacilityId, r.vehicle?.facilityId]))
+        if (f) await this.realtime.emitToFacility(f, RealtimeEvent.VitalUpdate, payload);
     }
     return { accepted: clientIds, created: fresh.length };
   }

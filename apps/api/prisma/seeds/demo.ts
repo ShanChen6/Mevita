@@ -20,6 +20,48 @@ const DEFAULT_OPENING_HOURS = [1, 2, 3, 4, 5, 6].flatMap((dayOfWeek) => [
   ...(dayOfWeek < 6 ? [{ dayOfWeek, startMinute: 13 * 60 + 30, endMinute: 16 * 60 + 30 }] : []),
 ]);
 
+const demoVehicles: {
+  facility: string;
+  plateNumber: string;
+  type: 'ADVANCED_AMBULANCE' | 'BASIC_AMBULANCE' | 'TRANSPORT';
+  equipment: string;
+  driverName: string;
+  driverPhone: string;
+}[] = [
+  {
+    facility: 'DEMO-TYT-02761',
+    plateNumber: '24C-008.88',
+    type: 'TRANSPORT',
+    equipment: 'Xe bán tải, cáng gấp',
+    driverName: 'Vàng A Sùng',
+    driverPhone: '0900000201',
+  },
+  {
+    facility: 'DEMO-BVDK-15',
+    plateNumber: '24A-115.01',
+    type: 'ADVANCED_AMBULANCE',
+    equipment: 'Máy thở, monitor, bơm tiêm điện, oxy',
+    driverName: 'Đinh Văn Tài',
+    driverPhone: '0900000115',
+  },
+  {
+    facility: 'DEMO-BVDK-15',
+    plateNumber: '24A-115.02',
+    type: 'BASIC_AMBULANCE',
+    equipment: 'Cáng, oxy, túi sơ cứu',
+    driverName: 'Lò Văn Hùng',
+    driverPhone: '0900000116',
+  },
+  {
+    facility: 'DEMO-BV-VIETDUC',
+    plateNumber: '29A-115.68',
+    type: 'ADVANCED_AMBULANCE',
+    equipment: 'Máy thở, monitor, máy sốc điện',
+    driverName: 'Nguyễn Văn Bình',
+    driverPhone: '0900000117',
+  },
+];
+
 const facilities: {
   code: string;
   name: string;
@@ -29,6 +71,9 @@ const facilities: {
   acceptsReferrals: boolean;
   /** Số giả lập cho demo */
   emergencyPhone: string;
+  /** Toạ độ gần đúng (theo vị trí xã/phường) — dùng cho theo dõi xe */
+  latitude: number;
+  longitude: number;
   specialties: string[];
 }[] = [
   {
@@ -39,6 +84,8 @@ const facilities: {
     communeCode: '02761',
     acceptsReferrals: false,
     emergencyPhone: '0900 333 115',
+    latitude: 22.7676,
+    longitude: 104.1236,
     specialties: ['GENERAL_INTERNAL', 'PEDIATRICS', 'FAMILY_MEDICINE'],
   },
   {
@@ -49,6 +96,8 @@ const facilities: {
     communeCode: '02647', // Phường Lào Cai
     acceptsReferrals: true,
     emergencyPhone: '0900 111 115',
+    latitude: 22.4127,
+    longitude: 104.0226,
     specialties: ['EMERGENCY_ICU', 'GENERAL_SURGERY', 'NEUROSURGERY', 'CARDIOLOGY', 'PEDIATRICS'],
   },
   {
@@ -59,6 +108,8 @@ const facilities: {
     communeCode: '00082', // Phường Cửa Nam, Hà Nội
     acceptsReferrals: true,
     emergencyPhone: '0900 222 115',
+    latitude: 21.0285,
+    longitude: 105.8472,
     specialties: ['EMERGENCY_ICU', 'NEUROSURGERY', 'ORTHOPEDICS_TRAUMA', 'GENERAL_SURGERY'],
   },
 ];
@@ -163,6 +214,8 @@ export async function seedDemo(prisma: PrismaClient) {
         communeCode: f.communeCode,
         acceptsReferrals: f.acceptsReferrals,
         emergencyPhone: f.emergencyPhone,
+        latitude: f.latitude,
+        longitude: f.longitude,
       },
     });
     facilityIds.set(f.code, facility.id);
@@ -177,6 +230,15 @@ export async function seedDemo(prisma: PrismaClient) {
         specialtyId: specialtyIds.get(code)!,
       })),
       skipDuplicates: true,
+    });
+  }
+  // Xe chuyển viện (Task C): trạm chỉ có xe bán tải → ca cấp cứu nên yêu cầu xe đón
+  for (const v of demoVehicles) {
+    const { facility, ...data } = v;
+    await prisma.vehicle.upsert({
+      where: { plateNumber: v.plateNumber },
+      create: { ...data, facilityId: facilityIds.get(facility)! },
+      update: { ...data, facilityId: facilityIds.get(facility)! },
     });
   }
 

@@ -91,7 +91,7 @@ DATABASE_URL="<direct>" NODE_ENV=production SEED_DEMO=true SEED_DEMO_PASSWORD="<
 - **Render gói free** ngủ sau 15 phút không có request; lần gọi đầu mất ~1 phút để khởi động và kết nối realtime rơi khi ngủ (client tự kết nối lại). Ngày bảo vệ: nâng lên gói Starter hoặc mở web trước 5 phút. Gói free cũng không có ổ đĩa lâu dài — vì vậy production dùng Cloudinary thật, không dùng kho ảnh giả lập.
 - **Neon gói free** tự tạm dừng compute khi rảnh (đánh thức ~1 giây) và giới hạn số kết nối → `DATABASE_POOL_MAX=5` trong `render.yaml`.
 - Một instance API phục vụ được ~1.000+ kết nối realtime (xem [testing.md](testing.md)); nhiều instance cần Redis adapter + sticky session.
-- Header bảo mật: API gửi `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `HSTS` (production); web gửi `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (chỉ cho phép camera để chụp ảnh).
+- Header bảo mật: API gửi `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `HSTS` (production); web gửi `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (chỉ cho phép camera — chụp ảnh — và định vị — chia sẻ vị trí xe).
 - Docker Hub giới hạn số lần tải ảnh gốc: build tại máy có thể dùng `--build-arg NODE_IMAGE=mirror.gcr.io/library/node:22-slim`.
 
 ## Đã kiểm chứng trước khi deploy (máy phát triển)

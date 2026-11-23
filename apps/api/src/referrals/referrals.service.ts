@@ -10,10 +10,12 @@ import type { AuthUser } from '../auth/auth.types.js';
 import { generateCode } from '../common/codes.js';
 import { addMinutes } from '../common/vn-time.js';
 import { Prisma } from '../generated/prisma/client.js';
+import type { VehicleType } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RealtimeEvent } from '../realtime/realtime.events.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import { toVitalDto, vitalSelect } from './referral-vitals.service.js';
+import { belowRecommendation } from './transport.js';
 import type { CreateReferralInput, ListReferralsQuery } from './referrals.schemas.js';
 
 const ACTIVE = ['PENDING', 'ACCEPTED'] as const;
@@ -24,6 +26,8 @@ const facilityBrief = {
   type: true,
   phone: true,
   emergencyPhone: true,
+  latitude: true,
+  longitude: true,
   commune: { select: { fullName: true, province: { select: { code: true, fullName: true } } } },
 } satisfies Prisma.HealthFacilitySelect;
 
@@ -104,6 +108,28 @@ const referralSelect = {
   },
   _count: { select: { vitalLogs: true } },
   vitalLogs: { select: vitalSelect, orderBy: { recordedAt: 'desc' }, take: 1 },
+  transportMode: true,
+  transportNote: true,
+  pickupRequestedAt: true,
+  pickupAssignedAt: true,
+  pickedUpAt: true,
+  arrivingNotifiedAt: true,
+  vehicle: {
+    select: {
+      id: true,
+      plateNumber: true,
+      type: true,
+      equipment: true,
+      driverName: true,
+      driverPhone: true,
+      facility: { select: { id: true, name: true, phone: true, emergencyPhone: true } },
+    },
+  },
+  locations: {
+    select: { latitude: true, longitude: true, recordedAt: true, speed: true, accuracy: true },
+    orderBy: { recordedAt: 'desc' },
+    take: 1,
+  },
 } satisfies Prisma.ReferralSelect;
 
 type ReferralRow = Prisma.ReferralGetPayload<{ select: typeof referralSelect }>;
@@ -127,6 +153,9 @@ function vitalsLine(n: number, last?: Date) {
   });
   return `Diễn biến trên xe: ${n} lần đo sinh tồn${t ? `, lần cuối lúc ${t}` : ''} (xem phiếu chuyển tuyến).`;
 }
+
+export type ReferralRowFull = ReferralRow;
+export { referralSelect };
 
 @Injectable()
 export class ReferralsService {
@@ -217,6 +246,34 @@ export class ReferralsService {
       });
       if (!escort) throw new BadRequestException('Người đi kèm phải là nhân viên của cơ sở');
     }
+    // Phương tiện (Task C): kiểm tra theo khuyến nghị của mức độ ưu tiên
+    const mode = input.transportMode ?? null;
+    let vehicle: { id: string; type: VehicleType } | null = null;
+    if (mode === 'FACILITY_VEHICLE') {
+      if (!input.vehicleId) throw new BadRequestException('Chọn xe của cơ sở');
+      const v = await this.prisma.vehicle.findFirst({
+        where: { id: input.vehicleId, facilityId: from.id, isActive: true },
+        select: { id: true, type: true, status: true },
+      });
+      if (!v) throw new BadRequestException('Xe không thuộc cơ sở');
+      if (v.status !== 'AVAILABLE')
+        throw new ConflictException('Xe đang làm nhiệm vụ hoặc bảo trì, chọn xe khác');
+      vehicle = v;
+    } else if (input.vehicleId) {
+      throw new BadRequestException('Chỉ chọn xe khi dùng xe của cơ sở');
+    }
+    if (
+      mode &&
+      belowRecommendation(input.priority, mode, vehicle?.type ?? null) &&
+      (input.transportNote?.length ?? 0) < 10
+    )
+      throw new BadRequestException(
+        'Phương tiện thấp hơn khuyến nghị cho mức độ này — ghi rõ lý do (ít nhất 10 ký tự)',
+      );
+    const pickup = mode === 'PICKUP';
+    if (!pickup && input.etaMinutes == null)
+      throw new BadRequestException('Nhập thời gian dự kiến xe tới');
+
     const open = await this.prisma.referral.findFirst({
       where: { sourceRecordId: record.id, status: { in: [...ACTIVE] } },
       select: { code: true },
@@ -225,6 +282,14 @@ export class ReferralsService {
       throw new ConflictException(`Hồ sơ này đã có phiếu chuyển tuyến ${open.code} đang thực hiện`);
 
     const now = new Date();
+    // Giữ xe trước (có điều kiện) — hai ca không thể cùng lấy một xe
+    if (vehicle) {
+      const { count } = await this.prisma.vehicle.updateMany({
+        where: { id: vehicle.id, status: 'AVAILABLE' },
+        data: { status: 'ON_MISSION' },
+      });
+      if (count === 0) throw new ConflictException('Xe vừa được giao cho ca khác, chọn xe khác');
+    }
     let referral: ReferralRow | null = null;
     for (let attempt = 0; attempt < 3 && !referral; attempt++) {
       try {
@@ -242,17 +307,28 @@ export class ReferralsService {
             initialTreatment: input.initialTreatment,
             escortId: input.escortId,
             vehicleInfo: input.vehicleInfo,
-            departedAt: now,
-            estimatedArrivalAt: addMinutes(now, input.etaMinutes),
+            transportMode: mode,
+            vehicleId: vehicle?.id ?? null,
+            transportNote: input.transportNote,
+            // Xe đón: bệnh nhân chưa rời trạm, giờ tới tính khi có xe nhận
+            pickupRequestedAt: pickup ? now : null,
+            departedAt: pickup ? null : now,
+            estimatedArrivalAt:
+              pickup || input.etaMinutes == null ? null : addMinutes(now, input.etaMinutes),
           },
           select: referralSelect,
         });
       } catch (error) {
-        if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'))
+        if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')) {
+          if (vehicle) await this.releaseVehicle(vehicle.id);
           throw error;
+        }
       }
     }
-    if (!referral) throw new ConflictException('Không tạo được mã phiếu, vui lòng thử lại');
+    if (!referral) {
+      if (vehicle) await this.releaseVehicle(vehicle.id);
+      throw new ConflictException('Không tạo được mã phiếu, vui lòng thử lại');
+    }
 
     const delivered = await this.realtime.emitToFacility(
       to.id,
@@ -264,7 +340,16 @@ export class ReferralsService {
       action: 'CREATE',
       entityType: 'Referral',
       entityId: referral.id,
-      metadata: { to: to.id, priority: input.priority, delivered },
+      metadata: {
+        to: to.id,
+        priority: input.priority,
+        delivered,
+        transportMode: mode,
+        ...(mode &&
+          belowRecommendation(input.priority, mode, vehicle?.type ?? null) && {
+            belowRecommendation: true,
+          }),
+      },
     });
     return { referral: this.toDto(referral), delivered };
   }
@@ -305,7 +390,11 @@ export class ReferralsService {
       referral &&
       (user.role === 'ADMIN' ||
         (!!user.facilityId &&
-          [referral.fromFacility.id, referral.toFacility.id].includes(user.facilityId)));
+          [
+            referral.fromFacility.id,
+            referral.toFacility.id,
+            referral.vehicle?.facility.id,
+          ].includes(user.facilityId)));
     if (!referral || !allowed) throw new NotFoundException('Không tìm thấy phiếu chuyển tuyến');
     await this.audit.log({ userId: user.id, action: 'VIEW', entityType: 'Referral', entityId: id });
     const images = await this.prisma.clinicalImage.findMany({
@@ -341,6 +430,7 @@ export class ReferralsService {
       where: { id },
       select: referralSelect,
     });
+    await this.releaseVehicle(updated.vehicle?.id);
     await this.notifyChange(updated, user, 'cancel');
     await this.audit.log({
       userId: user.id,
@@ -499,6 +589,7 @@ export class ReferralsService {
       where: { id },
       select: referralSelect,
     });
+    await this.releaseVehicle(updated.vehicle?.id);
     await this.notifyChange(updated, user, 'arrive');
     await this.audit.log({
       userId: user.id,
@@ -508,6 +599,15 @@ export class ReferralsService {
       metadata: { action: 'arrive', recordId },
     });
     return { referral: this.toDto(updated), recordId, created: true };
+  }
+
+  /** Trả xe về trạng thái sẵn sàng khi ca kết thúc. */
+  async releaseVehicle(vehicleId: string | null | undefined) {
+    if (!vehicleId) return;
+    await this.prisma.vehicle.updateMany({
+      where: { id: vehicleId, status: 'ON_MISSION' },
+      data: { status: 'AVAILABLE' },
+    });
   }
 
   private async assertReceiver(id: string, user: AuthUser) {
@@ -528,6 +628,7 @@ export class ReferralsService {
       where: { id },
       select: referralSelect,
     });
+    if (action === 'reject') await this.releaseVehicle(updated.vehicle?.id);
     await this.notifyChange(updated, user, action);
     await this.audit.log({
       userId: user.id,
@@ -543,10 +644,10 @@ export class ReferralsService {
    * Phát `referral_updated` tới cả hai phía: `side = outgoing` cho cơ sở gửi (bác sĩ chuyển, người đi kèm),
    * `side = incoming` cho bệnh viện nhận (các bác sĩ trực khác thấy ca đã có người xử lý).
    */
-  private async notifyChange(
+  async notifyChange(
     r: ReferralRow,
     actor: AuthUser,
-    action: 'accept' | 'preparation' | 'reject' | 'cancel' | 'arrive',
+    action: 'accept' | 'preparation' | 'reject' | 'cancel' | 'arrive' | 'dispatch' | 'picked_up',
   ) {
     const actorRow = await this.prisma.user.findUnique({
       where: { id: actor.id },
@@ -568,6 +669,13 @@ export class ReferralsService {
       cancellationReason: r.cancellationReason,
       by: name(actorRow),
       byUserId: actor.id,
+      transportMode: r.transportMode,
+      vehicle: r.vehicle && {
+        plateNumber: r.vehicle.plateNumber,
+        type: r.vehicle.type,
+        facility: r.vehicle.facility.name,
+      },
+      estimatedArrivalAt: r.estimatedArrivalAt,
       at: new Date(),
     };
     await Promise.all([
@@ -617,9 +725,18 @@ export class ReferralsService {
     };
   }
 
-  private toDto(r: ReferralRow) {
-    const { referredBy, escort, acceptedBy, receivedBy, sourceRecord, _count, vitalLogs, ...rest } =
-      r;
+  toDto(r: ReferralRow) {
+    const {
+      referredBy,
+      escort,
+      acceptedBy,
+      receivedBy,
+      sourceRecord,
+      _count,
+      vitalLogs,
+      locations,
+      ...rest
+    } = r;
     return {
       ...rest,
       referredBy: { id: referredBy.id, name: name(referredBy), phone: referredBy.phone },
@@ -629,6 +746,7 @@ export class ReferralsService {
       interProvincial: r.fromFacility.commune.province.code !== r.toFacility.commune.province.code,
       vitalLogCount: _count.vitalLogs,
       latestVital: vitalLogs[0] ? toVitalDto(vitalLogs[0]) : null,
+      latestLocation: locations[0] ?? null,
       sourceRecord: {
         ...sourceRecord,
         imageCount: sourceRecord._count.clinicalImages,

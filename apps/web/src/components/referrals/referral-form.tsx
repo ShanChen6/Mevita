@@ -12,24 +12,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { createReferral } from '@/lib/actions/referrals';
+import { TransportSection } from './transport-section';
 import { referralFormSchema, type ReferralFormValues } from '@/lib/data/referral-schema';
-import type { ReferralDestination, StaffOption } from '@/lib/data/types';
+import type { ReferralDestination, StaffOption, TransportOptions } from '@/lib/data/types';
 import { facilityType, referralPriority, type ReferralPriority } from '@/lib/labels';
 import { cn } from '@/lib/utils';
 
 const PRIORITIES: ReferralPriority[] = ['CRITICAL', 'URGENT', 'ROUTINE'];
-const ETA_PRESETS = [15, 30, 45, 60, 90, 120];
-const POSITION: Record<string, string> = {
-  DOCTOR: 'Bác sĩ',
-  NURSE: 'Điều dưỡng',
-  MIDWIFE: 'Hộ sinh',
-  PHYSICIAN_ASSISTANT: 'Y sĩ',
-  COORDINATOR: 'Điều phối',
-  RECEPTIONIST: 'Tiếp đón',
-};
 
 function DestinationCard({ d, selected }: { d: ReferralDestination; selected: boolean }) {
   return (
@@ -74,6 +65,20 @@ function DestinationCard({ d, selected }: { d: ReferralDestination; selected: bo
   );
 }
 
+/** Mặc định theo tình trạng bệnh nhân: có xe cứu thương sẵn sàng → dùng ngay; ca cấp cứu không có xe → xin xe đón. */
+function defaultTransport(t: TransportOptions, priority: ReferralPriority) {
+  const amb = t.ownVehicles.find((v) => v.status === 'AVAILABLE' && v.type !== 'TRANSPORT');
+  if (amb)
+    return { transportMode: 'FACILITY_VEHICLE' as const, vehicleId: amb.id, transportNote: '' };
+  if (priority === 'ROUTINE') {
+    const any = t.ownVehicles.find((v) => v.status === 'AVAILABLE');
+    return any
+      ? { transportMode: 'FACILITY_VEHICLE' as const, vehicleId: any.id, transportNote: '' }
+      : { transportMode: 'FAMILY' as const, vehicleId: '', transportNote: '' };
+  }
+  return { transportMode: 'PICKUP' as const, vehicleId: '', transportNote: '' };
+}
+
 interface Props {
   portal: 'commune' | 'province';
   recordId: string;
@@ -85,10 +90,18 @@ interface Props {
   };
   destinations: ReferralDestination[];
   escorts: StaffOption[];
+  transport: TransportOptions;
 }
 
 /** Lệnh chuyển tuyến khẩn cấp: chọn bệnh viện, mức độ, xử trí sơ cứu, phương tiện & thời gian dự kiến tới. */
-export function ReferralForm({ portal, recordId, defaults, destinations, escorts }: Props) {
+export function ReferralForm({
+  portal,
+  recordId,
+  defaults,
+  destinations,
+  escorts,
+  transport,
+}: Props) {
   const router = useRouter();
   const form = useForm<ReferralFormValues>({
     resolver: zodResolver(referralFormSchema),
@@ -102,13 +115,11 @@ export function ReferralForm({ portal, recordId, defaults, destinations, escorts
       escortId: '',
       vehicleInfo: '',
       etaMinutes: 45,
+      ...defaultTransport(transport, defaults.priority),
     },
   });
   const { register, handleSubmit, formState, control, setValue } = form;
-  const [toFacilityId, priority, eta] = useWatch({
-    control,
-    name: ['toFacilityId', 'priority', 'etaMinutes'],
-  });
+  const [toFacilityId, priority] = useWatch({ control, name: ['toFacilityId', 'priority'] });
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const err = formState.errors;
@@ -128,6 +139,7 @@ export function ReferralForm({ portal, recordId, defaults, destinations, escorts
       const qs = new URLSearchParams({
         sent: res.data.referral.code,
         delivered: String(res.data.delivered),
+        ...(res.data.pickup && { pickup: String(res.data.pickup.facilities) }),
       });
       router.push(`/${portal}/referrals?${qs}`);
     }),
@@ -243,57 +255,15 @@ export function ReferralForm({ portal, recordId, defaults, destinations, escorts
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Vận chuyển</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="escortId">Nhân viên đi kèm xe</Label>
-            <NativeSelect id="escortId" {...register('escortId')}>
-              <option value="">— Chọn người đi kèm —</option>
-              {escorts.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.academicTitle ? `${e.academicTitle}. ` : ''}
-                  {e.fullName} ({POSITION[e.position] ?? e.position})
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="vehicleInfo">Phương tiện</Label>
-            <Input
-              id="vehicleInfo"
-              placeholder="VD: Xe cứu thương 24A-123.45"
-              {...register('vehicleInfo')}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="etaMinutes">Dự kiến tới nơi sau (phút)</Label>
-            <Input
-              id="etaMinutes"
-              inputMode="numeric"
-              aria-invalid={!!err.etaMinutes}
-              {...register('etaMinutes', { valueAsNumber: true })}
-            />
-            <div className="flex flex-wrap gap-1">
-              {ETA_PRESETS.map((m) => (
-                <Button
-                  key={m}
-                  type="button"
-                  size="sm"
-                  variant={eta === m ? 'default' : 'outline'}
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setValue('etaMinutes', m, { shouldValidate: true })}
-                >
-                  {m}′
-                </Button>
-              ))}
-            </div>
-            {err.etaMinutes && <p className="text-destructive text-xs">{err.etaMinutes.message}</p>}
-          </div>
-        </CardContent>
-      </Card>
+      <TransportSection
+        control={control}
+        register={register}
+        setValue={setValue}
+        errors={err}
+        options={transport}
+        target={target}
+        escorts={escorts}
+      />
 
       {target && target.onDutyCount === 0 && (
         <div

@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getRecord } from '@/lib/data/encounters';
-import { getDestinations, getEscorts } from '@/lib/data/referrals';
+import { getDestinations, getEscorts, getTransportOptions } from '@/lib/data/referrals';
 import { ageAt } from '@/lib/format';
 import { gender } from '@/lib/labels';
 import { ReferralForm } from './referral-form';
@@ -36,10 +36,11 @@ async function Content({
       </Card>
     );
   }
-  const [record, destinations, escorts] = await Promise.all([
+  const [record, destinations, escorts, transport] = await Promise.all([
     getRecord(recordId),
     getDestinations(),
     getEscorts(),
+    getTransportOptions(),
   ]);
   const now = new Date().toISOString();
   const primary = record.diagnoses.find((d) => d.isPrimary);
@@ -71,6 +72,7 @@ async function Content({
         recordId={record.id}
         destinations={destinations}
         escorts={escorts}
+        transport={transport}
         defaults={{
           reason: primary
             ? `${primary.icdCode} ${primary.name} — vượt khả năng chuyên môn, cần điều trị tuyến trên`

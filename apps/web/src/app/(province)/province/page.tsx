@@ -7,6 +7,7 @@ import { SoundToggle } from '@/components/realtime/sound-toggle';
 import { TestSignalButton } from '@/components/realtime/test-signal-button';
 import { IncomingReferralCard } from '@/components/referrals/incoming-referral-card';
 import { ReferralLiveRefresh } from '@/components/referrals/referral-live-refresh';
+import { PickupRequestsSection } from '@/components/vehicles/pickup-requests-section';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
 import { listReferrals } from '@/lib/data/referrals';
@@ -69,6 +70,9 @@ export default function CoordinationCenterPage() {
         }
       />
       <ReferralLiveRefresh vitals />
+      <Suspense>
+        <PickupRequestsSection />
+      </Suspense>
       <Suspense
         fallback={<div className="bg-muted/50 h-80 animate-pulse rounded-xl border" aria-busy />}
       >

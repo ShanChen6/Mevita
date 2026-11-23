@@ -3,7 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { toast, Toaster } from 'sonner';
 
-import type { ReferralUpdatedEvent } from '@/lib/data/types';
+import { playAlert } from '@/lib/alert-sound';
+import type { ReferralPriorityValue, ReferralUpdatedEvent } from '@/lib/data/types';
+import { referralPriority } from '@/lib/labels';
 import { formatTime } from '@/lib/format';
 import { IncomingAlertDialog } from './incoming-alert-dialog';
 import { useRealtimeEvent } from './realtime-provider';
@@ -29,6 +31,17 @@ export function RealtimeNotifications({ offset = 72 }: { offset?: number }) {
             .filter(Boolean)
             .join(' · '),
         });
+      else if (e.action === 'dispatch')
+        toast.success(
+          `${e.vehicle?.facility ?? 'Cơ sở'} cử xe ${e.vehicle?.plateNumber ?? ''} tới đón ca ${e.code}`,
+          {
+            id,
+            duration: 20_000,
+            description: e.estimatedArrivalAt
+              ? `Dự kiến tới bệnh viện lúc ${formatTime(e.estimatedArrivalAt)}`
+              : undefined,
+          },
+        );
       else if (e.action === 'arrive')
         toast.success(`${e.toFacility} đã tiếp nhận bệnh nhân ${e.patientName}`, {
           id,
@@ -59,7 +72,65 @@ export function RealtimeNotifications({ offset = 72 }: { offset?: number }) {
     }
     if (e.action === 'cancel')
       toast.warning(`Tuyến dưới đã huỷ lệnh ${e.code}`, { id, description: e.cancellationReason });
+    else if (e.action === 'picked_up')
+      toast.info(`Xe đã đón bệnh nhân ca ${e.code}, đang trên đường tới`, {
+        id,
+        description: e.estimatedArrivalAt
+          ? `Dự kiến tới lúc ${formatTime(e.estimatedArrivalAt)}`
+          : undefined,
+      });
+    else if (e.action === 'dispatch' && e.vehicle)
+      toast.info(`Ca ${e.code}: ${e.vehicle.facility} cử xe ${e.vehicle.plateNumber} đi đón`, {
+        id,
+      });
   });
+
+  // Xe chuyển viện (Task C)
+  useRealtimeEvent<{
+    id: string;
+    code: string;
+    priority: ReferralPriorityValue;
+    reason: string;
+    fromFacility: { name: string; phone: string | null };
+    distanceKm: number | null;
+  }>('pickup_request', (e) => {
+    playAlert(e.priority === 'ROUTINE' ? 'ROUTINE' : 'URGENT');
+    toast.warning(`Yêu cầu xe đón ${e.code} · ${referralPriority[e.priority].label}`, {
+      id: `pickup-${e.id}`,
+      duration: e.priority === 'CRITICAL' ? Infinity : 60_000,
+      description: `${e.fromFacility.name}${e.distanceKm != null ? ` · cách ${e.distanceKm.toLocaleString('vi-VN')} km` : ''} — ${e.reason}`,
+      action: {
+        label: 'Cử xe',
+        onClick: () =>
+          router.push(
+            window.location.pathname.startsWith('/province')
+              ? '/province#pickup'
+              : '/commune#pickup',
+          ),
+      },
+    });
+  });
+  useRealtimeEvent<{ id: string; code: string; assignedTo: string; plateNumber: string }>(
+    'pickup_closed',
+    (e) => {
+      toast.dismiss(`pickup-${e.id}`);
+      toast.info(`Yêu cầu xe đón ${e.code} đã được ${e.assignedTo} nhận (xe ${e.plateNumber})`);
+    },
+  );
+  useRealtimeEvent<{ id: string; code: string; remainingKm: number | null }>(
+    'vehicle_arriving',
+    (e) => {
+      playAlert('ROUTINE');
+      toast.warning(`Xe ca ${e.code} sắp tới — chuẩn bị tiếp đón`, {
+        id: `arriving-${e.id}`,
+        duration: 60_000,
+        description:
+          e.remainingKm != null
+            ? `Còn khoảng ${e.remainingKm.toLocaleString('vi-VN')} km`
+            : undefined,
+      });
+    },
+  );
 
   useRealtimeEvent<ChannelTest>('channel_test', (e) => {
     const who = e.from.academicTitle

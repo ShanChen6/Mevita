@@ -28,12 +28,14 @@ src/app/
 |            | `/commune/encounters/new`   | Phiếu khám: sinh tồn, ICD-10, đơn thuốc, ảnh, ký              | 3.2, 3.3 |
 |            | `/commune/referrals`        | Ca đã chuyển tuyến, huỷ lệnh, chi tiết `/[id]`                | 4.2      |
 |            | `/commune/referrals/new`    | Lệnh chuyển tuyến khẩn cấp (`?record=` từ phiếu khám)         | 4.2      |
+|            | `/commune/vehicles`         | Xe chuyển viện của trạm                                       | C        |
 |            | `/escort/[referralId]`      | Cập nhật sinh tồn trên xe (mobile, offline-first, cả 2 tuyến) | 4.3      |
 | Tuyến Tỉnh | `/province`                 | Trung tâm điều phối: ca đang tới, cập nhật realtime           | 4.2, 4.4 |
 |            | `/province/referrals`       | Ca chuyển tuyến tới & ca bệnh viện chuyển đi (liên tỉnh)      | 4.2      |
 |            | `/province/referrals/[id]`  | Chi tiết ca, đếm ngược; xác nhận ê-kíp & biểu đồ sinh tồn     | 4.2, 4.4 |
 |            | `/province/appointments`    | Lịch hẹn khám chuyên khoa                                     | 2.3      |
 |            | `/province/records`         | Hồ sơ điều trị tiếp nối                                       | 5.1      |
+|            | `/province/vehicles`        | Xe chuyển viện của bệnh viện, yêu cầu xe đón trên Tổng quan   | C        |
 | Quản trị   | `/admin`                    | Thống kê: đặt lịch, chuyển tuyến, mô hình bệnh tật            | 5.2      |
 |            | `/admin/users`              | Tài khoản: tìm kiếm, khoá / mở khoá                           | 5.2      |
 |            | `/admin/audit`              | Nhật ký truy cập                                              | 5.2      |

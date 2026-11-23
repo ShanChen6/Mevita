@@ -18,13 +18,14 @@ import { PriorityBadge, ReferralStatusBadge } from '@/components/shared/status-b
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getSession } from '@/lib/auth/session';
-import { getReferral, getReferralVitals } from '@/lib/data/referrals';
+import { findReferralTrack, getReferral, getReferralVitals } from '@/lib/data/referrals';
 import type { Referral } from '@/lib/data/types';
 import { ageAt, formatDateTime, formatDecimal } from '@/lib/format';
 import { bloodType, encounterType, gender } from '@/lib/labels';
 import { CancelReferralButton } from './cancel-referral-button';
 import { EtaCountdown } from './eta-countdown';
 import { LiveVitalsPanel } from './live-vitals-panel';
+import { VehicleTrackingPanel } from './vehicle-tracking-panel';
 import { ReferralResponse } from './referral-response';
 import { ReferralLiveRefresh } from './referral-live-refresh';
 
@@ -68,10 +69,11 @@ async function Detail({
 }) {
   await connection();
   const { id } = await params;
-  const [r, vitals, session] = await Promise.all([
+  const [r, vitals, session, track] = await Promise.all([
     getReferral(id),
     getReferralVitals(id),
     getSession(),
+    findReferralTrack(id),
   ]);
   const viewerFacility = session?.facilityId;
   const p = r.patient;
@@ -132,6 +134,10 @@ async function Detail({
         portal={portal}
         canRespond={r.toFacility.id === viewerFacility || session?.role === 'ADMIN'}
       />
+
+      {(r.transportMode || track.length > 0) && (
+        <VehicleTrackingPanel referral={r} initialTrack={track} now={now} />
+      )}
 
       <LiveVitalsPanel referralId={r.id} initial={vitals} escort={r.escort?.name ?? null} />
 
@@ -216,7 +222,9 @@ async function Detail({
               <p className="flex items-start gap-2">
                 <Truck className="mt-0.5 size-4 shrink-0" aria-hidden />
                 <span>
-                  {r.vehicleInfo ?? 'Chưa ghi phương tiện'}
+                  {r.vehicle
+                    ? `Xe ${r.vehicle.plateNumber} (${r.vehicle.facility.name})`
+                    : (r.vehicleInfo ?? 'Chưa ghi phương tiện')}
                   {r.escort && (
                     <span className="block">
                       Đi kèm: <span className="font-medium">{r.escort.name}</span>

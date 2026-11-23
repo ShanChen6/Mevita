@@ -12,6 +12,7 @@ import {
   Search,
   Siren,
   Stethoscope,
+  Truck,
   UserRound,
   type LucideIcon,
 } from 'lucide-react';
@@ -62,6 +63,7 @@ export const portals: Record<Portal, PortalConfig> = {
       { href: '/commune/patients', label: 'Tra cứu bệnh nhân', icon: Search },
       { href: '/commune/encounters', label: 'Khám bệnh', icon: Stethoscope },
       { href: '/commune/referrals', label: 'Chuyển tuyến', icon: Ambulance },
+      { href: '/commune/vehicles', label: 'Xe chuyển viện', icon: Truck },
     ],
   },
   province: {
@@ -75,6 +77,7 @@ export const portals: Record<Portal, PortalConfig> = {
       { href: '/province/patients', label: 'Tra cứu bệnh nhân', icon: Search },
       { href: '/province/encounters', label: 'Khám bệnh', icon: Stethoscope },
       { href: '/province/records', label: 'Hồ sơ điều trị', icon: FileHeart },
+      { href: '/province/vehicles', label: 'Xe chuyển viện', icon: Truck },
     ],
   },
   admin: {

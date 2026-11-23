@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { AlertTriangle, Building2, HeartPulse, Stethoscope } from 'lucide-react';
+import { AlertTriangle, Ambulance, Building2, HeartPulse, Stethoscope } from 'lucide-react';
 
 import { PriorityBadge, ReferralStatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
@@ -78,6 +78,16 @@ export function IncomingReferralCard({ referral: r, now }: { referral: Referral;
             <Stethoscope className="size-3.5" aria-hidden /> {r.referredBy.name}
           </span>
         </div>
+        {(r.transportMode || r.vehicleInfo) && (
+          <p className="flex items-center gap-1.5" data-testid="card-transport">
+            <Ambulance className="size-3.5 text-sky-600" aria-hidden />
+            {r.transportMode === 'PICKUP' && !r.vehicle
+              ? 'Chờ cơ sở nhận yêu cầu xe đón'
+              : r.vehicle
+                ? `Xe ${r.vehicle.plateNumber} · ${r.vehicle.facility.name}${r.transportMode === 'PICKUP' && !r.pickedUpAt ? ' (đang đi đón)' : ''}`
+                : r.vehicleInfo}
+          </p>
+        )}
         <VitalStrip r={r} />
         {r.status === 'ACCEPTED' && (
           <p className="text-emerald-700 dark:text-emerald-400">

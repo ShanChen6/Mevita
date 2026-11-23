@@ -301,6 +301,8 @@ export interface ReferralFacility {
   type: FacilityType;
   phone: string | null;
   emergencyPhone: string | null;
+  latitude: number | null;
+  longitude: number | null;
   commune: { fullName: string; province: { code: string; fullName: string } };
 }
 
@@ -339,6 +341,28 @@ export interface Referral {
   interProvincial: boolean;
   vitalLogCount: number;
   latestVital: VitalLog | null;
+  transportMode: TransportModeValue | null;
+  transportNote: string | null;
+  pickupRequestedAt: string | null;
+  pickupAssignedAt: string | null;
+  pickedUpAt: string | null;
+  arrivingNotifiedAt: string | null;
+  vehicle: {
+    id: string;
+    plateNumber: string;
+    type: VehicleTypeValue;
+    equipment: string | null;
+    driverName: string | null;
+    driverPhone: string | null;
+    facility: { id: string; name: string; phone: string | null; emergencyPhone: string | null };
+  } | null;
+  latestLocation: {
+    latitude: number;
+    longitude: number;
+    recordedAt: string;
+    speed: number | null;
+    accuracy: number | null;
+  } | null;
   /** Chỉ có ở chi tiết phiếu: ảnh cận lâm sàng của phiếu khám tuyến dưới */
   sourceImages?: ClinicalImage[];
   fromFacility: ReferralFacility;
@@ -449,7 +473,7 @@ export interface VitalUpdateEvent {
 export interface ReferralUpdatedEvent {
   id: string;
   code: string;
-  action: 'accept' | 'preparation' | 'reject' | 'cancel' | 'arrive';
+  action: 'accept' | 'preparation' | 'reject' | 'cancel' | 'arrive' | 'dispatch' | 'picked_up';
   status: ReferralStatusValue;
   side: 'incoming' | 'outgoing';
   priority: ReferralPriorityValue;
@@ -463,6 +487,9 @@ export interface ReferralUpdatedEvent {
   cancellationReason: string | null;
   by: string | null;
   at: string;
+  transportMode: TransportModeValue | null;
+  vehicle: { plateNumber: string; type: VehicleTypeValue; facility: string } | null;
+  estimatedArrivalAt: string | null;
 }
 
 /** Thống kê toàn hệ thống (Task 5.2) */
@@ -536,4 +563,95 @@ export interface AuditEntry {
   ipAddress: string | null;
   createdAt: string;
   user: { id: string; fullName: string; email: string | null; role: string } | null;
+}
+
+export type VehicleTypeValue = 'ADVANCED_AMBULANCE' | 'BASIC_AMBULANCE' | 'TRANSPORT';
+export type VehicleStatusValue = 'AVAILABLE' | 'ON_MISSION' | 'MAINTENANCE';
+export type TransportModeValue = 'FACILITY_VEHICLE' | 'PICKUP' | 'EMS_115' | 'FAMILY' | 'OTHER';
+
+export interface Vehicle {
+  id: string;
+  plateNumber: string;
+  type: VehicleTypeValue;
+  equipment: string | null;
+  driverName: string | null;
+  driverPhone: string | null;
+  status: VehicleStatusValue;
+  isActive: boolean;
+  lastLatitude: number | null;
+  lastLongitude: number | null;
+  lastSeenAt: string | null;
+  mission: {
+    id: string;
+    code: string;
+    priority: ReferralPriorityValue;
+    toFacility: { name: string };
+    fromFacility: { name: string };
+  } | null;
+}
+
+export interface PickupCandidate {
+  id: string;
+  name: string;
+  phone: string | null;
+  emergencyPhone: string | null;
+  distanceKm: number | null;
+  pickupMinutes: number | null;
+  advanced: number;
+  basic: number;
+}
+
+export interface TransportOptions {
+  origin: { latitude: number; longitude: number } | null;
+  recommendation: Record<ReferralPriorityValue, string>;
+  ownVehicles: {
+    id: string;
+    plateNumber: string;
+    type: VehicleTypeValue;
+    equipment: string | null;
+    status: VehicleStatusValue;
+    driverName: string | null;
+  }[];
+  pickupCandidates: PickupCandidate[];
+}
+
+export interface PickupRequest {
+  id: string;
+  code: string;
+  priority: ReferralPriorityValue;
+  reason: string;
+  createdAt: string;
+  fromFacility: {
+    id: string;
+    name: string;
+    phone: string | null;
+    emergencyPhone: string | null;
+    commune: { fullName: string };
+  };
+  toFacility: { id: string; name: string };
+  patient: { gender: Gender; dateOfBirth: string };
+  distanceKm: number | null;
+  pickupMinutes: number | null;
+  isDestination: boolean;
+  canDispatch: boolean;
+}
+
+export interface TrackPoint {
+  clientId?: string;
+  latitude: number;
+  longitude: number;
+  recordedAt: string;
+  speed: number | null;
+  accuracy: number | null;
+}
+
+/** Sự kiện realtime `vehicle_location` */
+export interface VehicleLocationEvent {
+  referralId: string;
+  code: string;
+  phase: 'pickup' | 'transport';
+  points: TrackPoint[];
+  etaAt: string | null;
+  remainingKm: number | null;
+  speedKmh: number | null;
 }

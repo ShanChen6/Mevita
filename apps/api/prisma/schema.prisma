@@ -137,6 +137,7 @@ model User {
   receivedReferrals   Referral[]         @relation("ReferralReceiver")
   escortedReferrals   Referral[]         @relation("ReferralEscort")
   referralVitalLogs   ReferralVitalLog[]
+  referralLocations   ReferralLocation[]
 
   @@index([role])
   @@map("users")
@@ -260,6 +261,7 @@ model HealthFacility {
   staff             StaffProfile[]
   appointments      Appointment[]
   medicalRecords    MedicalRecord[]
+  vehicles          Vehicle[]
   outgoingReferrals Referral[]             @relation("ReferralFrom")
   incomingReferrals Referral[]             @relation("ReferralTo")
 
@@ -690,6 +692,20 @@ model Referral {
   /// Hồ sơ điều trị tiếp nối tại tuyến trên (Task 5.1)
   continuationRecord MedicalRecord?     @relation("ReferralContinuation")
 
+  /// Vận chuyển (Task C): phương thức, xe được giao, các mốc điều xe
+  transportMode      TransportMode?     @map("transport_mode")
+  vehicleId          String?            @map("vehicle_id") @db.Uuid
+  /// Lý do khi chọn phương tiện thấp hơn khuyến nghị; thông tin xe 115 / xe gia đình
+  transportNote      String?            @map("transport_note") @db.VarChar(500)
+  pickupRequestedAt  DateTime?          @map("pickup_requested_at")
+  pickupAssignedAt   DateTime?          @map("pickup_assigned_at")
+  /// Xe đón đã tới trạm và nhận bệnh nhân (bắt đầu chặng chở bệnh nhân)
+  pickedUpAt         DateTime?          @map("picked_up_at")
+  /// Đã báo "xe sắp tới" cho bệnh viện nhận (vào bán kính cảnh báo)
+  arrivingNotifiedAt DateTime?          @map("arriving_notified_at")
+  vehicle            Vehicle?           @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  locations          ReferralLocation[]
+
   @@index([toFacilityId, status])
   @@index([fromFacilityId, createdAt])
   @@index([patientId])
@@ -735,4 +751,85 @@ model ReferralVitalLog {
 
   @@index([referralId, recordedAt])
   @@map("referral_vital_logs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// XE CHUYỂN VIỆN & VỊ TRÍ (Task C)
+// ─────────────────────────────────────────────────────────────
+
+enum VehicleType {
+  /// Xe cứu thương hồi sức: máy thở, monitor, bơm tiêm điện
+  ADVANCED_AMBULANCE
+  /// Xe cứu thương cơ bản: cáng, oxy, túi sơ cứu
+  BASIC_AMBULANCE
+  /// Xe vận chuyển thường của cơ sở
+  TRANSPORT
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  ON_MISSION
+  MAINTENANCE
+}
+
+enum TransportMode {
+  /// Xe của chính cơ sở chuyển đi
+  FACILITY_VEHICLE
+  /// Cơ sở khác (thường là bệnh viện nhận) cử xe tới đón
+  PICKUP
+  /// Xe cấp cứu 115
+  EMS_115
+  /// Gia đình tự túc phương tiện
+  FAMILY
+  OTHER
+}
+
+/// Xe chuyển viện của cơ sở y tế
+model Vehicle {
+  id            String        @id @default(uuid(7)) @db.Uuid
+  facilityId    String        @map("facility_id") @db.Uuid
+  plateNumber   String        @unique @map("plate_number") @db.VarChar(20)
+  type          VehicleType
+  /// Trang bị, VD "Máy thở, monitor, oxy"
+  equipment     String?       @db.VarChar(255)
+  driverName    String?       @map("driver_name") @db.VarChar(150)
+  driverPhone   String?       @map("driver_phone") @db.VarChar(15)
+  status        VehicleStatus @default(AVAILABLE)
+  isActive      Boolean       @default(true) @map("is_active")
+  /// Vị trí gần nhất nhận được (khi đang làm nhiệm vụ)
+  lastLatitude  Float?        @map("last_latitude")
+  lastLongitude Float?        @map("last_longitude")
+  lastSeenAt    DateTime?     @map("last_seen_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  facility  HealthFacility @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  referrals Referral[]
+
+  @@index([facilityId, status])
+  @@map("vehicles")
+}
+
+/// Điểm vị trí của xe trong một ca chuyển tuyến (gửi từ điện thoại người đi kèm)
+model ReferralLocation {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  referralId   String   @map("referral_id") @db.Uuid
+  /// UUID do thiết bị sinh — gửi lại sau lúc mất sóng không ghi trùng
+  clientId     String   @unique @map("client_id") @db.Uuid
+  recordedAt   DateTime @map("recorded_at")
+  receivedAt   DateTime @default(now()) @map("received_at")
+  latitude     Float
+  longitude    Float
+  /// Sai số (mét)
+  accuracy     Float?
+  /// Tốc độ (m/s)
+  speed        Float?
+  heading      Float?
+  recordedById String   @map("recorded_by_id") @db.Uuid
+
+  referral   Referral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  recordedBy User     @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([referralId, recordedAt])
+  @@map("referral_locations")
 }

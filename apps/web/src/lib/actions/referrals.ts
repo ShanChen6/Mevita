@@ -40,11 +40,18 @@ export async function createReferral(values: ReferralFormValues) {
       message: parsed.error.issues[0]?.message ?? 'Dữ liệu không hợp lệ',
     };
   const v = parsed.data;
-  return call<{ referral: Referral; delivered: number }>('/referrals', {
+  return call<{
+    referral: Referral;
+    delivered: number;
+    pickup?: { delivered: number; facilities: number };
+  }>('/referrals', {
     ...v,
     escortId: v.escortId || null,
     initialTreatment: v.initialTreatment || null,
     vehicleInfo: v.vehicleInfo || null,
+    vehicleId: v.transportMode === 'FACILITY_VEHICLE' ? v.vehicleId || null : null,
+    transportNote: v.transportNote || null,
+    etaMinutes: v.transportMode === 'PICKUP' || Number.isNaN(v.etaMinutes) ? null : v.etaMinutes,
   });
 }
 
@@ -96,6 +103,26 @@ export async function arriveReferral(
 ): Promise<ActionResult<{ recordId: string; created: boolean }>> {
   if (!validId(id)) return { ok: false, message: 'Phiếu không hợp lệ' };
   const res = await call<{ recordId: string; created: boolean }>(`/referrals/${id}/arrive`, {});
+  if (res.ok) refresh();
+  return res;
+}
+
+/** Cơ sở cử xe đón bệnh nhân (cơ sở đầu tiên được giao ca). */
+export async function dispatchVehicle(
+  id: string,
+  vehicleId: string,
+): Promise<ActionResult<{ pickupMinutes: number | null }>> {
+  if (!validId(id) || !validId(vehicleId)) return { ok: false, message: 'Dữ liệu không hợp lệ' };
+  const res = await call<{ pickupMinutes: number | null }>(`/referrals/${id}/dispatch`, {
+    vehicleId,
+  });
+  if (res.ok) refresh();
+  return res;
+}
+
+export async function markPickedUp(id: string): Promise<ActionResult<Referral>> {
+  if (!validId(id)) return { ok: false, message: 'Phiếu không hợp lệ' };
+  const res = await call<Referral>(`/referrals/${id}/picked-up`, {});
   if (res.ok) refresh();
   return res;
 }

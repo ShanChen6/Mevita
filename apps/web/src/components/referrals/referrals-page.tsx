@@ -27,6 +27,17 @@ async function Lists({
   return (
     <>
       {sent && <SentBanner referral={sent} delivered={Number(sp.delivered ?? 0)} />}
+      {sent && typeof sp.pickup === 'string' && (
+        <p
+          role="status"
+          data-testid="pickup-banner"
+          className="rounded-lg border border-sky-300 bg-sky-50 p-3 text-sm text-sky-950 dark:bg-sky-500/10 dark:text-sky-100"
+        >
+          Đã gửi <span className="font-semibold">yêu cầu xe đón</span> tới {sp.pickup} cơ sở có xe
+          cứu thương. Cơ sở nhận trước sẽ được giao ca — bạn nhận thông báo xe nào tới đón và giờ dự
+          kiến.
+        </p>
+      )}
       {portal === 'province' && (
         <section className="flex flex-col gap-3" aria-labelledby="in-heading">
           <h2 id="in-heading" className="text-lg font-semibold">

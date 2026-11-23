@@ -8,7 +8,9 @@ import {
   PriorityBadge,
   ReferralStatusBadge,
 } from '@/components/shared/status-badge';
+import { ReferralLiveRefresh } from '@/components/referrals/referral-live-refresh';
 import { PageHeader } from '@/components/shared/page-header';
+import { PickupRequestsSection } from '@/components/vehicles/pickup-requests-section';
 import { StatCard } from '@/components/shared/stat-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -137,6 +139,10 @@ export default function CommuneDashboardPage() {
           </>
         }
       />
+      <ReferralLiveRefresh />
+      <Suspense>
+        <PickupRequestsSection />
+      </Suspense>
       <Suspense
         fallback={<div className="bg-muted/50 h-80 animate-pulse rounded-xl border" aria-busy />}
       >

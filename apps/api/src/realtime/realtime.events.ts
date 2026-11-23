@@ -10,6 +10,14 @@ export const RealtimeEvent = {
   ReferralUpdated: 'referral_updated',
   /** Chỉ số sinh tồn mới trên xe (Task 4.3) */
   VitalUpdate: 'vital_update',
+  /** Trạm cần xe đón bệnh nhân — gửi tới bệnh viện nhận và cơ sở lân cận có xe (Task C) */
+  PickupRequest: 'pickup_request',
+  /** Yêu cầu xe đón đã có cơ sở nhận */
+  PickupClosed: 'pickup_closed',
+  /** Vị trí xe chuyển viện (client → server có ack; server → các cơ sở liên quan) */
+  VehicleLocation: 'vehicle_location',
+  /** Xe vào bán kính 1 km quanh bệnh viện nhận */
+  VehicleArriving: 'vehicle_arriving',
 } as const;
 
 export const NAMESPACE = '/realtime';

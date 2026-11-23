@@ -159,3 +159,32 @@ export const icdChapter: Record<string, string> = {
   XXI: 'Yếu tố sức khoẻ',
   XXII: 'Mã đặc biệt',
 };
+
+export const vehicleType: Record<'ADVANCED_AMBULANCE' | 'BASIC_AMBULANCE' | 'TRANSPORT', string> = {
+  ADVANCED_AMBULANCE: 'Xe cứu thương hồi sức',
+  BASIC_AMBULANCE: 'Xe cứu thương cơ bản',
+  TRANSPORT: 'Xe vận chuyển thường',
+};
+
+export const vehicleStatus: Record<'AVAILABLE' | 'ON_MISSION' | 'MAINTENANCE', Display> = {
+  AVAILABLE: {
+    label: 'Sẵn sàng',
+    className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300',
+  },
+  ON_MISSION: {
+    label: 'Đang làm nhiệm vụ',
+    className: 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300',
+  },
+  MAINTENANCE: { label: 'Bảo trì', className: 'bg-muted text-muted-foreground' },
+};
+
+export const transportMode: Record<
+  'FACILITY_VEHICLE' | 'PICKUP' | 'EMS_115' | 'FAMILY' | 'OTHER',
+  string
+> = {
+  FACILITY_VEHICLE: 'Xe của cơ sở',
+  PICKUP: 'Xe đón',
+  EMS_115: 'Xe cấp cứu 115',
+  FAMILY: 'Gia đình tự túc',
+  OTHER: 'Phương tiện khác',
+};

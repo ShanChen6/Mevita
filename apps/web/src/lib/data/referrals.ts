@@ -5,7 +5,16 @@ import { notFound, redirect } from 'next/navigation';
 
 import { ApiError, apiFetch } from '@/lib/api';
 import { ACCESS_COOKIE } from '@/lib/auth/config';
-import type { Referral, ReferralDestination, StaffOption, VitalLog } from './types';
+import type {
+  PickupRequest,
+  Referral,
+  ReferralDestination,
+  StaffOption,
+  TrackPoint,
+  TransportOptions,
+  Vehicle,
+  VitalLog,
+} from './types';
 
 async function authed<T>(path: string): Promise<T> {
   const token = (await cookies()).get(ACCESS_COOKIE)?.value;
@@ -58,6 +67,21 @@ export async function findReferralVitals(id: string): Promise<VitalLog[]> {
   if (!token) return [];
   try {
     return await apiFetch<VitalLog[]>(`/referrals/${id}/vitals`, { token });
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 404 || error.status === 403)) return [];
+    throw error;
+  }
+}
+
+export const getTransportOptions = () => authed<TransportOptions>('/referrals/transport-options');
+export const getVehicles = () => authed<Vehicle[]>('/vehicles');
+export const getPickupRequests = () => authed<PickupRequest[]>('/referrals/pickup-requests');
+
+export async function findReferralTrack(id: string): Promise<TrackPoint[]> {
+  const token = (await cookies()).get(ACCESS_COOKIE)?.value;
+  if (!token) return [];
+  try {
+    return await apiFetch<TrackPoint[]>(`/referrals/${id}/locations`, { token });
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 403)) return [];
     throw error;

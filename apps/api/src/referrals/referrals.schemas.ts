@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { ConsciousnessLevel, ReferralPriority, ReferralStatus } from '../generated/prisma/enums.js';
+import {
+  ConsciousnessLevel,
+  ReferralPriority,
+  ReferralStatus,
+  TransportMode,
+} from '../generated/prisma/enums.js';
 
 const text = (min: number, max: number, label: string) =>
   z.string().trim().min(min, `Nhập ${label}`).max(max);
@@ -26,8 +31,19 @@ export const createReferralSchema = z.object({
     .max(100)
     .nullish()
     .transform((v) => v || null),
-  /** Thời gian dự kiến xe tới nơi (phút) */
-  etaMinutes: z.number().int().min(5, 'Tối thiểu 5 phút').max(600, 'Tối đa 600 phút'),
+  /** Thời gian dự kiến xe tới nơi (phút) — không cần khi yêu cầu xe đón (tính khi có xe nhận) */
+  etaMinutes: z.number().int().min(5, 'Tối thiểu 5 phút').max(600, 'Tối đa 600 phút').nullish(),
+  /** Phương thức vận chuyển (Task C); bỏ trống = như cũ (chỉ ghi phương tiện bằng chữ) */
+  transportMode: z.enum(TransportMode).nullish(),
+  /** Xe của cơ sở (khi transportMode = FACILITY_VEHICLE) */
+  vehicleId: z.uuid().nullish(),
+  /** Lý do khi chọn phương tiện thấp hơn khuyến nghị */
+  transportNote: z
+    .string()
+    .trim()
+    .max(500)
+    .nullish()
+    .transform((v) => v || null),
 });
 export type CreateReferralInput = z.infer<typeof createReferralSchema>;
 
@@ -134,3 +150,81 @@ export const vitalBatchSchema = z.object({
 
 /** Gói tin socket `vital_update` từ thiết bị trên xe */
 export const vitalSocketSchema = vitalBatchSchema.extend({ referralId: z.uuid() });
+
+export const transportOptionsSchema = z.object({
+  toFacilityId: z.uuid().optional(),
+});
+
+export const dispatchSchema = z.object({
+  vehicleId: z.uuid(),
+});
+
+/** Một điểm vị trí từ điện thoại trên xe */
+export const locationEntrySchema = z.object({
+  clientId: z.uuid(),
+  recordedAt: z.iso.datetime({ offset: true }),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  accuracy: z
+    .number()
+    .min(0)
+    .max(10_000)
+    .nullish()
+    .transform((v) => v ?? null),
+  speed: z
+    .number()
+    .min(0)
+    .max(100)
+    .nullish()
+    .transform((v) => v ?? null),
+  heading: z
+    .number()
+    .min(0)
+    .max(360)
+    .nullish()
+    .transform((v) => v ?? null),
+});
+export type LocationEntryInput = z.infer<typeof locationEntrySchema>;
+
+export const locationBatchSchema = z.object({
+  entries: z.array(locationEntrySchema).min(1).max(200),
+});
+export const locationSocketSchema = locationBatchSchema.extend({ referralId: z.uuid() });
+
+const vehicleFields = {
+  plateNumber: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[0-9]{2}[A-Z]{1,2}[-\s.0-9]{4,10}$/, 'Biển số dạng 24A-115.15'),
+  type: z.enum(['ADVANCED_AMBULANCE', 'BASIC_AMBULANCE', 'TRANSPORT']),
+  equipment: z
+    .string()
+    .trim()
+    .max(255)
+    .nullish()
+    .transform((v) => v || null),
+  driverName: z
+    .string()
+    .trim()
+    .max(150)
+    .nullish()
+    .transform((v) => v || null),
+  driverPhone: z
+    .string()
+    .trim()
+    .regex(/^0\d{9,10}$/, 'Số điện thoại 10–11 chữ số, bắt đầu bằng 0')
+    .nullish()
+    .or(z.literal('').transform(() => null))
+    .transform((v) => v || null),
+};
+export const createVehicleSchema = z.object(vehicleFields);
+export type CreateVehicleInput = z.infer<typeof createVehicleSchema>;
+export const updateVehicleSchema = z
+  .object({
+    ...vehicleFields,
+    status: z.enum(['AVAILABLE', 'MAINTENANCE']),
+    isActive: z.boolean(),
+  })
+  .partial();
+export type UpdateVehicleInput = z.infer<typeof updateVehicleSchema>;

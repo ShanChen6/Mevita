@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowLeft, MapPin, Phone } from 'lucide-react';
 
 import { ConnectionStatus } from '@/components/realtime/connection-status';
 import { EscortVitalsForm } from '@/components/referrals/escort-vitals-form';
+import { LocationShare } from '@/components/referrals/location-share';
 import { EtaCountdown } from '@/components/referrals/eta-countdown';
 import { ReferralLiveRefresh } from '@/components/referrals/referral-live-refresh';
 import { PriorityBadge, ReferralStatusBadge } from '@/components/shared/status-badge';
@@ -91,6 +92,30 @@ async function Escort({ params }: { params: Promise<{ referralId: string }> }) {
           <span className="font-semibold">Đã bàn giao bệnh nhân</span> cho {r.toFacility.name}
           {r.arrivedAt && ` lúc ${formatTime(r.arrivedAt)}`}
           {r.receivedBy && ` · ${r.receivedBy.name}`}. Các lần đo còn lưu tạm vẫn được gửi tự động.
+        </p>
+      )}
+      {active && (r.transportMode !== 'PICKUP' || r.vehicle) && (
+        <LocationShare
+          referralId={r.id}
+          showPickedUp={r.transportMode === 'PICKUP' && !!r.vehicle && !r.pickedUpAt}
+        />
+      )}
+      {active && r.transportMode === 'PICKUP' && !r.vehicle && (
+        <p
+          className="rounded-lg bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-500/10 dark:text-amber-100"
+          role="status"
+        >
+          Đang chờ cơ sở nhận yêu cầu xe đón — màn hình tự cập nhật khi có xe.
+        </p>
+      )}
+      {active && r.vehicle && (
+        <p className="text-muted-foreground text-sm">
+          Xe {r.vehicle.plateNumber} ({r.vehicle.facility.name})
+          {r.vehicle.driverPhone && (
+            <a className="text-primary ml-1" href={`tel:${r.vehicle.driverPhone}`}>
+              · tài xế {r.vehicle.driverPhone}
+            </a>
+          )}
         </p>
       )}
       {active || r.status === 'ARRIVED' ? (
