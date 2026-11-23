@@ -5,14 +5,38 @@ import { PriorityBadge, ReferralStatusBadge } from '@/components/shared/status-b
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Referral } from '@/lib/data/types';
-import { ageAt } from '@/lib/format';
+import { ageAt, formatTime } from '@/lib/format';
 import { gender } from '@/lib/labels';
 import { cn } from '@/lib/utils';
 import { EtaCountdown } from './eta-countdown';
 
+/** Chỉ số mới nhất trên xe; chưa có thì dùng sinh tồn lúc khám tại tuyến dưới. */
+function VitalStrip({ r }: { r: Referral }) {
+  const v = r.latestVital ?? r.sourceRecord;
+  if (v.pulse == null && v.spo2 == null && v.systolicBp == null) return null;
+  return (
+    <p className="bg-muted flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-3 py-2 font-medium tabular-nums">
+      <HeartPulse className="size-4 text-red-500" aria-hidden />
+      {v.pulse != null && <span>M {v.pulse}</span>}
+      {v.systolicBp != null && (
+        <span>
+          HA {v.systolicBp}/{v.diastolicBp}
+        </span>
+      )}
+      {v.spo2 != null && (
+        <span className={cn(v.spo2 < 94 && 'text-red-600 dark:text-red-400')}>SpO2 {v.spo2}%</span>
+      )}
+      {r.latestVital?.gcs != null && <span>GCS {r.latestVital.gcs}</span>}
+      <span className="text-muted-foreground text-xs font-normal">
+        {r.latestVital ? `trên xe ${formatTime(r.latestVital.recordedAt)}` : 'lúc khám'}
+      </span>
+    </p>
+  );
+}
+
 export function IncomingReferralCard({ referral: r, now }: { referral: Referral; now: string }) {
-  const s = r.sourceRecord;
-  const primary = s.diagnoses.find((d) => d.isPrimary) ?? s.diagnoses[0];
+  const dx = r.sourceRecord.diagnoses;
+  const primary = dx.find((d) => d.isPrimary) ?? dx[0];
   return (
     <Card
       data-testid={`incoming-${r.code}`}
@@ -54,23 +78,7 @@ export function IncomingReferralCard({ referral: r, now }: { referral: Referral;
             <Stethoscope className="size-3.5" aria-hidden /> {r.referredBy.name}
           </span>
         </div>
-        {(s.pulse != null || s.spo2 != null) && (
-          <p className="bg-muted flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-3 py-2 font-medium tabular-nums">
-            <HeartPulse className="size-4 text-red-500" aria-hidden />
-            {s.pulse != null && <span>M {s.pulse}</span>}
-            {s.systolicBp != null && (
-              <span>
-                HA {s.systolicBp}/{s.diastolicBp}
-              </span>
-            )}
-            {s.spo2 != null && (
-              <span className={cn(s.spo2 < 94 && 'text-red-600 dark:text-red-400')}>
-                SpO2 {s.spo2}%
-              </span>
-            )}
-            <span className="text-muted-foreground text-xs font-normal">lúc khám</span>
-          </p>
-        )}
+        <VitalStrip r={r} />
         <Button
           asChild
           variant={r.status === 'PENDING' ? 'default' : 'outline'}

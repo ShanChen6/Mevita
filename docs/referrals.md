@@ -30,7 +30,7 @@ sequenceDiagram
 | `/province`                                         | Bảng điều phối: ca đang tới (chờ tiếp nhận / đã nhận), sắp theo mức độ rồi thời gian xe tới, đếm ngược, dị ứng, sinh tồn lúc khám. Tự cập nhật khi có ca mới hoặc ca bị huỷ.                                                                                                                                                                                                   |
 | `/province/referrals`, `/[id]`                      | Danh sách ca tới và ca bệnh viện chuyển đi; chi tiết ca: thông tin chuyên môn, sinh tồn, thuốc đã dùng, liên lạc (cơ sở gửi, bác sĩ chuyển, người đi kèm, người nhà).                                                                                                                                                                                                          |
 
-Toast cảnh báo ca mới hiện ở mọi trang của bác sĩ tuyến tỉnh; ca **Cấp cứu tối khẩn** không tự tắt. Âm thanh, popup toàn màn hình và nút tiếp nhận / sẵn sàng ê-kíp thuộc Task 4.4; màn hình trên xe và biểu đồ sinh tồn trực tiếp thuộc Task 4.3.
+Toast cảnh báo ca mới hiện ở mọi trang của bác sĩ tuyến tỉnh; ca **Cấp cứu tối khẩn** không tự tắt. Âm thanh, popup toàn màn hình và nút tiếp nhận / sẵn sàng ê-kíp thuộc Task 4.4. Màn hình trên xe và sinh tồn trực tiếp: xem [docs/escort-vitals.md](escort-vitals.md).
 
 ## API
 

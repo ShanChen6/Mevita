@@ -18,7 +18,8 @@ export const roleHome: Record<UserRole, string> = {
 const protectedPrefixes: { prefix: string; roles: UserRole[] }[] = [
   { prefix: '/patient', roles: ['PATIENT', 'ADMIN'] },
   { prefix: '/commune', roles: ['COMMUNE_STAFF', 'ADMIN'] },
-  { prefix: '/escort', roles: ['COMMUNE_STAFF', 'ADMIN'] },
+  // Bệnh viện tỉnh cũng chuyển ca lên tuyến trung ương và cử người đi kèm xe
+  { prefix: '/escort', roles: ['COMMUNE_STAFF', 'PROVINCE_STAFF', 'ADMIN'] },
   { prefix: '/province', roles: ['PROVINCE_STAFF', 'ADMIN'] },
 ];
 

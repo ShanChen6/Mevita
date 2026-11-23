@@ -12,6 +12,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RealtimeEvent } from '../realtime/realtime.events.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
+import { toVitalDto, vitalSelect } from './referral-vitals.service.js';
 import type { CreateReferralInput, ListReferralsQuery } from './referrals.schemas.js';
 
 const ACTIVE = ['PENDING', 'ACCEPTED'] as const;
@@ -99,6 +100,7 @@ const referralSelect = {
     },
   },
   _count: { select: { vitalLogs: true } },
+  vitalLogs: { select: vitalSelect, orderBy: { recordedAt: 'desc' }, take: 1 },
 } satisfies Prisma.ReferralSelect;
 
 type ReferralRow = Prisma.ReferralGetPayload<{ select: typeof referralSelect }>;
@@ -363,7 +365,7 @@ export class ReferralsService {
   }
 
   private toDto(r: ReferralRow) {
-    const { referredBy, escort, acceptedBy, sourceRecord, _count, ...rest } = r;
+    const { referredBy, escort, acceptedBy, sourceRecord, _count, vitalLogs, ...rest } = r;
     return {
       ...rest,
       referredBy: { id: referredBy.id, name: name(referredBy), phone: referredBy.phone },
@@ -371,6 +373,7 @@ export class ReferralsService {
       acceptedBy: acceptedBy && { id: acceptedBy.id, name: name(acceptedBy) },
       interProvincial: r.fromFacility.commune.province.code !== r.toFacility.commune.province.code,
       vitalLogCount: _count.vitalLogs,
+      latestVital: vitalLogs[0] ? toVitalDto(vitalLogs[0]) : null,
       sourceRecord: {
         ...sourceRecord,
         imageCount: sourceRecord._count.clinicalImages,

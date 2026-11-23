@@ -3,6 +3,7 @@
  */
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { randomUUID } from 'node:crypto';
 import { io, type Socket } from 'socket.io-client';
 import request from 'supertest';
 import type { App } from 'supertest/types.js';
@@ -346,5 +347,144 @@ describe('Chuyển tuyến khẩn cấp (e2e)', () => {
       .send(body({ priority: 'X' }))
       .expect(400);
     await http().post('/api/referrals').set(as('other')).send(body()).expect(404); // hồ sơ không thuộc cơ sở
+  });
+
+  describe('sinh tồn trên xe (Task 4.3)', () => {
+    let referralId = '';
+    const vital = (o: Record<string, unknown> = {}) => ({
+      clientId: randomUUID(),
+      recordedAt: new Date().toISOString(),
+      pulse: 112,
+      systolicBp: 95,
+      diastolicBp: 60,
+      spo2: 92,
+      consciousness: 'VOICE',
+      gcs: 12,
+      ...o,
+    });
+    interface Ack {
+      ok: boolean;
+      accepted?: string[];
+      created?: number;
+      message?: string;
+      retry?: boolean;
+    }
+    interface VitalEvent {
+      referralId: string;
+      vitals: { clientId: string; spo2: number; recordedBy: string }[];
+    }
+    const send = (s: Socket, entries: unknown[], id = referralId) =>
+      s.timeout(2000).emitWithAck('vital_update', { referralId: id, entries }) as Promise<Ack>;
+
+    beforeAll(async () => {
+      if (!dbReady) return;
+      const record = await prisma.medicalRecord.create({
+        data: {
+          code: `E2E-${tag}-V`,
+          patientId,
+          doctorId: ids.users[0],
+          facilityId: fac.station,
+          encounterType: 'EMERGENCY',
+          chiefComplaint: 'Đa chấn thương',
+        },
+      });
+      const res = await http()
+        .post('/api/referrals')
+        .set(as('commune'))
+        .send(body({ sourceRecordId: record.id }))
+        .expect(201);
+      referralId = (res.body as { referral: { id: string } }).referral.id;
+    });
+
+    it('nhân viên đi kèm gửi qua socket → bệnh viện nhận vital_update ngay; gửi lại không ghi trùng', async (ctx) => {
+      if (!dbReady) return ctx.skip();
+      const hospital = await connect('hospital');
+      const nurse = await connect('nurse');
+      const first = [vital({ recordedAt: new Date(Date.now() - 60_000).toISOString() }), vital()];
+      const pushed = next<VitalEvent>(hospital, 'vital_update');
+      const t0 = Date.now();
+      const ack = await send(nurse, first);
+      expect(ack).toMatchObject({ ok: true, created: 2 });
+      const ev = await pushed;
+      expect(Date.now() - t0).toBeLessThan(1000);
+      expect(ev.referralId).toBe(referralId);
+      expect(ev.vitals.map((v) => v.clientId)).toEqual(first.map((v) => v.clientId));
+      expect(ev.vitals[0]?.recordedBy).toBe('ĐD. NV nurse');
+
+      // Đồng bộ lại sau mất sóng: gửi lại cả lô cũ + 1 bản mới → chỉ ghi và phát bản mới
+      const extra = vital({ spo2: 88 });
+      const again = next<VitalEvent>(hospital, 'vital_update');
+      const ack2 = await send(nurse, [...first, extra]);
+      expect(ack2).toMatchObject({ ok: true, created: 1 });
+      expect(ack2.accepted).toHaveLength(3);
+      expect((await again).vitals.map((v) => v.clientId)).toEqual([extra.clientId]);
+
+      const list = (
+        await http().get(`/api/referrals/${referralId}/vitals`).set(as('hospital')).expect(200)
+      ).body as { clientId: string }[];
+      expect(list.map((v) => v.clientId)).toEqual([...first, extra].map((v) => v.clientId));
+      const detail = (
+        await http().get(`/api/referrals/${referralId}`).set(as('hospital')).expect(200)
+      ).body as { vitalLogCount: number; latestVital: { spo2: number } };
+      expect(detail).toMatchObject({ vitalLogCount: 3, latestVital: { spo2: 88 } });
+    });
+
+    it('REST dự phòng cũng idempotent; từ chối người ngoài cơ sở gửi và dữ liệu sai', async (ctx) => {
+      if (!dbReady) return ctx.skip();
+      const v = vital();
+      const r1 = await http()
+        .post(`/api/referrals/${referralId}/vitals`)
+        .set(as('commune'))
+        .send({ entries: [v] })
+        .expect(200);
+      const r2 = await http()
+        .post(`/api/referrals/${referralId}/vitals`)
+        .set(as('commune'))
+        .send({ entries: [v] })
+        .expect(200);
+      expect([r1.body, r2.body]).toMatchObject([{ created: 1 }, { created: 0 }]);
+
+      const hospital = await connect('hospital');
+      expect(await send(hospital, [vital()])).toMatchObject({ ok: false, retry: false });
+      await http()
+        .post(`/api/referrals/${referralId}/vitals`)
+        .set(as('other'))
+        .send({ entries: [vital()] })
+        .expect(403);
+      await http().get(`/api/referrals/${referralId}/vitals`).set(as('other')).expect(404);
+
+      const nurse = await connect('nurse');
+      expect(await send(nurse, [vital({ spo2: 120 })])).toMatchObject({ ok: false, retry: false });
+      expect(await send(nurse, [vital({ systolicBp: 60, diastolicBp: 90 })])).toMatchObject({
+        ok: false,
+      });
+      const empty = { clientId: randomUUID(), recordedAt: new Date().toISOString() };
+      expect(await send(nurse, [empty])).toMatchObject({ ok: false });
+      const future = vital({ recordedAt: new Date(Date.now() + 3600_000).toISOString() });
+      expect(await send(nurse, [future])).toMatchObject({
+        ok: false,
+        message: expect.stringMatching(/đồng hồ/),
+      });
+      await http()
+        .post(`/api/referrals/${referralId}/vitals`)
+        .set(as('nurse'))
+        .send({ entries: [] })
+        .expect(400);
+    });
+
+    it('phiếu đã huỷ không nhận thêm chỉ số', async (ctx) => {
+      if (!dbReady) return ctx.skip();
+      await http()
+        .post(`/api/referrals/${referralId}/cancel`)
+        .set(as('commune'))
+        .send({ reason: 'Kết thúc test' })
+        .expect(200);
+      const nurse = await connect('nurse');
+      expect(await send(nurse, [vital()])).toMatchObject({
+        ok: false,
+        retry: false,
+        message: expect.stringMatching(/kết thúc/),
+      });
+    });
   });
 });

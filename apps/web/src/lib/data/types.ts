@@ -330,6 +330,7 @@ export interface Referral {
   createdAt: string;
   interProvincial: boolean;
   vitalLogCount: number;
+  latestVital: VitalLog | null;
   fromFacility: ReferralFacility;
   toFacility: ReferralFacility;
   referredBy: { id: string; name: string; phone: string | null };
@@ -394,4 +395,35 @@ export interface IncomingReferralAlert {
   diagnosis: { icdCode: string; name: string } | null;
   fromFacility: { name: string; province: string };
   referredBy: string | null;
+}
+
+export type ConsciousnessValue = 'ALERT' | 'VOICE' | 'PAIN' | 'UNRESPONSIVE';
+
+/** Chỉ số nhập trên xe — `clientId` do thiết bị sinh, chống ghi trùng khi đồng bộ lại */
+export interface VitalEntry {
+  clientId: string;
+  recordedAt: string;
+  pulse: number | null;
+  systolicBp: number | null;
+  diastolicBp: number | null;
+  spo2: number | null;
+  respiratoryRate: number | null;
+  temperature: number | null;
+  consciousness: ConsciousnessValue | null;
+  gcs: number | null;
+  note: string | null;
+}
+
+/** Một lần đo sinh tồn trên xe đã lưu ở máy chủ */
+export interface VitalLog extends VitalEntry {
+  id: string;
+  receivedAt: string;
+  recordedBy: string;
+}
+
+/** Sự kiện realtime `vital_update` */
+export interface VitalUpdateEvent {
+  referralId: string;
+  code: string;
+  vitals: VitalLog[];
 }

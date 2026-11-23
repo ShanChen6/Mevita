@@ -62,7 +62,7 @@ export default function CoordinationCenterPage() {
           </>
         }
       />
-      <ReferralLiveRefresh />
+      <ReferralLiveRefresh vitals />
       <Suspense
         fallback={<div className="bg-muted/50 h-80 animate-pulse rounded-xl border" aria-busy />}
       >

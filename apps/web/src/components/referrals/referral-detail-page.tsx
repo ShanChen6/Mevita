@@ -7,6 +7,7 @@ import {
   Building2,
   ImageIcon,
   Phone,
+  Smartphone,
   Stethoscope,
   Truck,
   UserRound,
@@ -16,12 +17,14 @@ import { PageHeader } from '@/components/shared/page-header';
 import { PriorityBadge, ReferralStatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getReferral } from '@/lib/data/referrals';
+import { getSession } from '@/lib/auth/session';
+import { getReferral, getReferralVitals } from '@/lib/data/referrals';
 import type { Referral } from '@/lib/data/types';
 import { ageAt, formatDateTime, formatDecimal } from '@/lib/format';
 import { bloodType, encounterType, gender } from '@/lib/labels';
 import { CancelReferralButton } from './cancel-referral-button';
 import { EtaCountdown } from './eta-countdown';
+import { LiveVitalsPanel } from './live-vitals-panel';
 import { ReferralLiveRefresh } from './referral-live-refresh';
 
 function Info({ label, children }: { label: string; children: React.ReactNode }) {
@@ -64,7 +67,12 @@ async function Detail({
 }) {
   await connection();
   const { id } = await params;
-  const r = await getReferral(id);
+  const [r, vitals, session] = await Promise.all([
+    getReferral(id),
+    getReferralVitals(id),
+    getSession(),
+  ]);
+  const viewerFacility = session?.facilityId;
   const p = r.patient;
   const now = new Date().toISOString();
   const src = r.sourceRecord;
@@ -117,6 +125,8 @@ async function Detail({
           Lệnh đã huỷ lúc {r.cancelledAt && formatDateTime(r.cancelledAt)} — {r.cancellationReason}
         </p>
       )}
+
+      <LiveVitalsPanel referralId={r.id} initial={vitals} escort={r.escort?.name ?? null} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -224,7 +234,7 @@ async function Detail({
                   </span>
                 </p>
               )}
-              {portal === 'commune' && phone(r.toFacility) && (
+              {r.fromFacility.id === viewerFacility && phone(r.toFacility) && (
                 <p className="flex items-start gap-2">
                   <Phone className="mt-0.5 size-4 shrink-0" aria-hidden />
                   <span>
@@ -240,9 +250,7 @@ async function Detail({
           <Card>
             <CardHeader>
               <CardTitle>Tiến trình</CardTitle>
-              <CardDescription>
-                Tiếp nhận & theo dõi sinh tồn trên xe: Task 4.3–4.4.
-              </CardDescription>
+              <CardDescription>Xác nhận tiếp nhận & sẵn sàng ê-kíp: Task 4.4.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-2 text-sm">
               <p>Gửi lệnh: {formatDateTime(r.createdAt)}</p>
@@ -254,8 +262,16 @@ async function Detail({
                 </p>
               )}
               {r.arrivedAt && <p>Đã tới: {formatDateTime(r.arrivedAt)}</p>}
-              <p className="text-muted-foreground">{r.vitalLogCount} lần đo sinh tồn trên xe</p>
-              {active && portal === 'commune' && <CancelReferralButton id={r.id} code={r.code} />}
+              {active && r.fromFacility.id === viewerFacility && (
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" asChild>
+                    <Link href={`/escort/${r.id}`}>
+                      <Smartphone /> Màn hình trên xe
+                    </Link>
+                  </Button>
+                  <CancelReferralButton id={r.id} code={r.code} />
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

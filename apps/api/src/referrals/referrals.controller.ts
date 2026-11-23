@@ -6,17 +6,23 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import {
   cancelReferralSchema,
   createReferralSchema,
+  vitalBatchSchema,
+  type VitalEntryInput,
   destinationsQuerySchema,
   listReferralsQuerySchema,
   type CreateReferralInput,
   type ListReferralsQuery,
 } from './referrals.schemas.js';
+import { ReferralVitalsService } from './referral-vitals.service.js';
 import { ReferralsService } from './referrals.service.js';
 
 @Controller('referrals')
 @Roles('COMMUNE_STAFF', 'PROVINCE_STAFF')
 export class ReferralsController {
-  constructor(private readonly referrals: ReferralsService) {}
+  constructor(
+    private readonly referrals: ReferralsService,
+    private readonly vitals: ReferralVitalsService,
+  ) {}
 
   /** Bệnh viện tuyến trên có thể chuyển tới (trong tỉnh trước, liên tỉnh sau) */
   @Get('destinations')
@@ -64,5 +70,22 @@ export class ReferralsController {
     @Body(new ZodValidationPipe(cancelReferralSchema)) body: { reason: string },
   ) {
     return this.referrals.cancel(id, user, body.reason);
+  }
+
+  /** Diễn biến sinh tồn trên xe (cũ → mới) */
+  @Get(':id/vitals')
+  listVitals(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+    return this.vitals.list(id, user);
+  }
+
+  /** Ghi lô chỉ số sinh tồn — dự phòng khi không dùng được kênh socket; idempotent theo clientId */
+  @HttpCode(200)
+  @Post(':id/vitals')
+  recordVitals(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodValidationPipe(vitalBatchSchema)) body: { entries: VitalEntryInput[] },
+  ) {
+    return this.vitals.record(id, user, body.entries);
   }
 }

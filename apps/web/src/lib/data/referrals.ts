@@ -5,7 +5,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { ApiError, apiFetch } from '@/lib/api';
 import { ACCESS_COOKIE } from '@/lib/auth/config';
-import type { Referral, ReferralDestination, StaffOption } from './types';
+import type { Referral, ReferralDestination, StaffOption, VitalLog } from './types';
 
 async function authed<T>(path: string): Promise<T> {
   const token = (await cookies()).get(ACCESS_COOKIE)?.value;
@@ -28,4 +28,9 @@ export const listReferrals = (direction: 'incoming' | 'outgoing', active = false
 export async function getReferral(id: string) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   return authed<Referral>(`/referrals/${id}`);
+}
+
+export async function getReferralVitals(id: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  return authed<VitalLog[]>(`/referrals/${id}/vitals`);
 }

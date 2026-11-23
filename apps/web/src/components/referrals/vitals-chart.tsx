@@ -11,8 +11,8 @@ import {
   YAxis,
 } from 'recharts';
 
+import type { VitalLog } from '@/lib/data/types';
 import { formatTime } from '@/lib/format';
-import type { MockVitalLog } from '@/lib/mock-data';
 
 const series = [
   { key: 'pulse', name: 'Mạch (l/p)', color: 'var(--chart-1)' },
@@ -20,8 +20,8 @@ const series = [
   { key: 'spo2', name: 'SpO2 (%)', color: 'var(--chart-2)' },
 ] as const;
 
-/** Biểu đồ biến thiên sinh tồn trên xe chuyển viện (Task 4.4 sẽ cập nhật theo thời gian thực). */
-export function VitalsChart({ data }: { data: MockVitalLog[] }) {
+/** Biểu đồ biến thiên sinh tồn trên xe chuyển viện. */
+export function VitalsChart({ data }: { data: VitalLog[] }) {
   const rows = data.map((d) => ({ ...d, time: formatTime(d.recordedAt) }));
   return (
     <div className="h-72 w-full" role="img" aria-label="Biểu đồ chỉ số sinh tồn theo thời gian">
@@ -29,7 +29,7 @@ export function VitalsChart({ data }: { data: MockVitalLog[] }) {
         <LineChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
           <XAxis dataKey="time" tickLine={false} axisLine={false} fontSize={12} />
-          <YAxis domain={[60, 180]} tickLine={false} axisLine={false} fontSize={12} />
+          <YAxis domain={[40, 200]} tickLine={false} axisLine={false} fontSize={12} />
           <Tooltip
             contentStyle={{
               background: 'var(--popover)',
@@ -48,6 +48,7 @@ export function VitalsChart({ data }: { data: MockVitalLog[] }) {
               stroke={s.color}
               strokeWidth={2}
               dot={{ r: 3 }}
+              connectNulls
               isAnimationActive={false}
             />
           ))}

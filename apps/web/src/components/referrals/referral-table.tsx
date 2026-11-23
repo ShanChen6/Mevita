@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Smartphone } from 'lucide-react';
 
 import { PriorityBadge, ReferralStatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
@@ -77,7 +78,14 @@ export function ReferralTable({
                 </TableCell>
                 <TableCell className="whitespace-nowrap pr-4 text-right">
                   {direction === 'outgoing' && active && (
-                    <CancelReferralButton id={r.id} code={r.code} />
+                    <>
+                      <Button size="sm" variant="ghost" asChild>
+                        <Link href={`/escort/${r.id}`}>
+                          <Smartphone /> Trên xe
+                        </Link>
+                      </Button>
+                      <CancelReferralButton id={r.id} code={r.code} />
+                    </>
                   )}
                   <Button size="sm" variant="outline" asChild>
                     <Link href={`/${portal}/referrals/${r.id}`}>Chi tiết</Link>
