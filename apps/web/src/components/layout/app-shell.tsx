@@ -5,6 +5,9 @@ import { MobileNav } from './mobile-nav';
 import type { Portal } from './portals';
 import { SidebarNav } from './sidebar-nav';
 import { UserMenu, UserMenuSkeleton } from './user-menu';
+import { ConnectionStatus } from '@/components/realtime/connection-status';
+import { RealtimeNotifications } from '@/components/realtime/realtime-notifications';
+import { RealtimeProvider } from '@/components/realtime/realtime-provider';
 
 interface AppShellProps {
   portal: Portal;
@@ -13,7 +16,9 @@ interface AppShellProps {
 
 /** Khung giao diện chung cho 3 phân hệ: sidebar (desktop), menu trượt (mobile), thanh trên cùng. */
 export function AppShell({ portal, children }: AppShellProps) {
-  return (
+  // Nhân viên y tế (tuyến xã, tuyến tỉnh) giữ kết nối realtime để nhận cảnh báo chuyển tuyến
+  const realtime = portal !== 'patient';
+  const shell = (
     <div className="flex min-h-svh w-full">
       <aside className="bg-card sticky top-0 hidden h-svh w-64 shrink-0 flex-col gap-6 border-r p-4 lg:flex">
         <Brand portal={portal} />
@@ -27,6 +32,7 @@ export function AppShell({ portal, children }: AppShellProps) {
             <span className="text-sm font-bold">Mevita</span>
           </div>
           <div className="ml-auto flex items-center gap-3">
+            {realtime && <ConnectionStatus />}
             <Suspense fallback={<UserMenuSkeleton />}>
               <UserMenu />
             </Suspense>
@@ -38,5 +44,13 @@ export function AppShell({ portal, children }: AppShellProps) {
         </main>
       </div>
     </div>
+  );
+  return realtime ? (
+    <RealtimeProvider>
+      {shell}
+      <RealtimeNotifications />
+    </RealtimeProvider>
+  ) : (
+    shell
   );
 }

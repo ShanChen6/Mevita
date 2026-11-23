@@ -98,6 +98,16 @@ const staff: {
     academicTitle: 'BSCKII',
   },
   {
+    email: 'bs.minh@mevita.vn',
+    phone: '0900000006',
+    fullName: 'Lê Văn Minh',
+    role: 'PROVINCE_STAFF',
+    facilityCode: 'DEMO-BVDK-15',
+    position: 'DOCTOR',
+    specialty: 'NEUROSURGERY',
+    academicTitle: 'BSCKI',
+  },
+  {
     email: 'bs.duc@mevita.vn',
     phone: '0900000005',
     fullName: 'Hoàng Minh Đức',

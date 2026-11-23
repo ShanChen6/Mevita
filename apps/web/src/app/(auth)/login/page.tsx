@@ -12,6 +12,7 @@ const demoAccounts = [
   { role: 'Bác sĩ Tuyến Xã', email: 'bs.an@mevita.vn' },
   { role: 'Điều dưỡng (đi xe cứu thương)', email: 'dd.hoa@mevita.vn' },
   { role: 'Bác sĩ Tuyến Tỉnh', email: 'bs.binh@mevita.vn' },
+  { role: 'Bác sĩ Tuyến Tỉnh (đồng nghiệp)', email: 'bs.minh@mevita.vn' },
   { role: 'Quản trị', email: 'admin@mevita.vn' },
 ];
 

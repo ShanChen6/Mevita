@@ -8,33 +8,10 @@ import {
   roleHome,
 } from '@/lib/auth/config';
 import { verifyAccessToken, type SessionClaims } from '@/lib/auth/jwt';
+import { refreshTokens, secondsUntil } from '@/lib/auth/refresh';
+import type { TokenPair } from '@/lib/api';
 
-const API_URL = process.env.API_URL ?? 'http://localhost:4000/api';
 const AUTH_PAGES = ['/login', '/register'];
-
-interface Refreshed {
-  accessToken: string;
-  accessTokenExpiresAt: string;
-  refreshToken: string;
-  refreshTokenExpiresAt: string;
-}
-
-async function refresh(refreshToken: string): Promise<Refreshed | null> {
-  try {
-    const res = await fetch(`${API_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-      cache: 'no-store',
-    });
-    return res.ok ? ((await res.json()) as Refreshed) : null;
-  } catch {
-    return null;
-  }
-}
-
-const secondsUntil = (iso: string) =>
-  Math.max(0, Math.floor((new Date(iso).getTime() - Date.now()) / 1000));
 
 /**
  * Kiểm tra lạc quan (optimistic) trước khi render:
@@ -51,11 +28,11 @@ export async function proxy(request: NextRequest) {
   let session: SessionClaims | null = await verifyAccessToken(
     request.cookies.get(ACCESS_COOKIE)?.value,
   );
-  let tokens: Refreshed | null = null;
+  let tokens: TokenPair | null = null;
   const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value;
 
   if (!session && refreshToken) {
-    tokens = await refresh(refreshToken);
+    tokens = await refreshTokens(refreshToken);
     session = tokens ? await verifyAccessToken(tokens.accessToken) : null;
   }
 

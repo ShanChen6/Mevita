@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
+import { RealtimeIoAdapter } from './realtime/realtime-io.adapter.js';
 import type { Env } from './config/env.validation.js';
 
 async function bootstrap() {
@@ -17,6 +18,7 @@ async function bootstrap() {
     credentials: true,
   });
   app.enableShutdownHooks();
+  app.useWebSocketAdapter(new RealtimeIoAdapter(app));
 
   const port = config.get('PORT', { infer: true });
   await app.listen(port);

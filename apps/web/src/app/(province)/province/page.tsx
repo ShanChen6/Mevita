@@ -1,5 +1,7 @@
 import { Ambulance, BellRing, BedDouble, CheckCircle2 } from 'lucide-react';
 
+import { ConnectionStatus } from '@/components/realtime/connection-status';
+import { TestSignalButton } from '@/components/realtime/test-signal-button';
 import { IncomingReferralCard } from '@/components/referrals/incoming-referral-card';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
@@ -20,13 +22,13 @@ export default function CoordinationCenterPage() {
         title="Trung tâm điều phối cấp cứu"
         description={facilities.laoCaiGeneral.name}
         actions={
-          <span className="flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-200">
-            <span className="size-2 animate-pulse rounded-full bg-emerald-500" aria-hidden />
-            Đang trực · nhận cảnh báo thời gian thực
-          </span>
+          <>
+            <ConnectionStatus detailed />
+            <TestSignalButton />
+          </>
         }
       />
-      <WireframeNote task="4.1, 4.4">
+      <WireframeNote task="4.2, 4.4">
         ca mới hiện popup kèm âm thanh cảnh báo trong dưới 1 giây
       </WireframeNote>
 
