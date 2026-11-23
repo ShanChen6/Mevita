@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
@@ -9,7 +9,9 @@ import { AuthService } from './auth.service.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RolesGuard } from './guards/roles.guard.js';
 import { TokenService } from './token.service.js';
+import { UserStatusService } from './user-status.service.js';
 
+@Global()
 @Module({
   imports: [
     JwtModule.registerAsync({
@@ -31,9 +33,11 @@ import { TokenService } from './token.service.js';
   providers: [
     AuthService,
     TokenService,
+    UserStatusService,
     // Thứ tự quan trọng: xác thực trước, kiểm tra vai trò sau
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
+  exports: [UserStatusService],
 })
 export class AuthModule {}

@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import type { AccessTokenPayload, AuthUser } from '../auth.types.js';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
+import { UserStatusService } from '../user-status.service.js';
 
 /** Guard toàn cục: mọi route yêu cầu access token hợp lệ, trừ route gắn `@Public()`. */
 @Injectable()
@@ -16,6 +17,7 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly jwt: JwtService,
+    private readonly status: UserStatusService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -33,17 +35,21 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Chưa đăng nhập');
     }
 
+    let payload: AccessTokenPayload;
     try {
-      const payload = await this.jwt.verifyAsync<AccessTokenPayload>(token);
-      request.user = {
-        id: payload.sub,
-        role: payload.role,
-        facilityId: payload.fid ?? null,
-        patientId: payload.pid ?? null,
-      };
-      return true;
+      payload = await this.jwt.verifyAsync<AccessTokenPayload>(token);
     } catch {
       throw new UnauthorizedException('Phiên đăng nhập không hợp lệ hoặc đã hết hạn');
     }
+    // Tài khoản bị khoá sau khi cấp token: chặn ngay, không đợi token hết hạn
+    if (!(await this.status.isActive(payload.sub)))
+      throw new UnauthorizedException('Tài khoản đã bị khoá');
+    request.user = {
+      id: payload.sub,
+      role: payload.role,
+      facilityId: payload.fid ?? null,
+      patientId: payload.pid ?? null,
+    };
+    return true;
   }
 }

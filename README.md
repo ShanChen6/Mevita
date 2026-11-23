@@ -57,23 +57,25 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 
 ## Lệnh thường dùng
 
-| Lệnh                                                | Mô tả                                           |
-| --------------------------------------------------- | ----------------------------------------------- |
-| `pnpm dev`                                          | Chạy song song web và api                       |
-| `pnpm dev:web`                                      | Chỉ chạy web                                    |
-| `pnpm dev:api`                                      | Chỉ chạy api                                    |
-| `pnpm build`                                        | Build toàn bộ                                   |
-| `pnpm lint`                                         | ESLint toàn bộ                                  |
-| `pnpm typecheck`                                    | Kiểm tra kiểu TypeScript                        |
-| `pnpm test`                                         | Chạy unit test                                  |
-| `pnpm format`                                       | Format code bằng Prettier                       |
-| `pnpm db:up`                                        | Khởi động PostgreSQL (Docker Compose)           |
-| `pnpm db:down`                                      | Dừng PostgreSQL                                 |
-| `pnpm db:migrate`                                   | Chạy migration (Prisma)                         |
-| `pnpm db:seed`                                      | Nạp danh mục: 34 tỉnh, 3.321 xã, 25 chuyên khoa |
-| `pnpm db:studio`                                    | Mở Prisma Studio                                |
-| `pnpm --filter @mevita/api icd10:import <file.csv>` | Nhập bảng ICD-10 chính thức                     |
-| `pnpm --filter @mevita/api sim:stats [--clear]`     | Tạo / xoá dữ liệu giả lập 180 ngày cho thống kê |
+| Lệnh                                                | Mô tả                                                     |
+| --------------------------------------------------- | --------------------------------------------------------- |
+| `pnpm dev`                                          | Chạy song song web và api                                 |
+| `pnpm dev:web`                                      | Chỉ chạy web                                              |
+| `pnpm dev:api`                                      | Chỉ chạy api                                              |
+| `pnpm build`                                        | Build toàn bộ                                             |
+| `pnpm lint`                                         | ESLint toàn bộ                                            |
+| `pnpm typecheck`                                    | Kiểm tra kiểu TypeScript                                  |
+| `pnpm test`                                         | Chạy unit test                                            |
+| `pnpm format`                                       | Format code bằng Prettier                                 |
+| `pnpm db:up`                                        | Khởi động PostgreSQL (Docker Compose)                     |
+| `pnpm db:down`                                      | Dừng PostgreSQL                                           |
+| `pnpm db:migrate`                                   | Chạy migration (Prisma)                                   |
+| `pnpm db:seed`                                      | Nạp danh mục: 34 tỉnh, 3.321 xã, 25 chuyên khoa           |
+| `pnpm db:studio`                                    | Mở Prisma Studio                                          |
+| `pnpm --filter @mevita/api icd10:import <file.csv>` | Nhập bảng ICD-10 chính thức                               |
+| `pnpm --filter @mevita/api sim:stats [--clear]`     | Tạo / xoá dữ liệu giả lập 180 ngày cho thống kê           |
+| `pnpm --filter @mevita/api test:e2e`                | E2E API, gồm kiểm thử bảo mật (cần DB đã seed)            |
+| `pnpm --filter @mevita/api load:socket -- …`        | Kiểm thử chịu tải Socket.io ([chi tiết](docs/testing.md)) |
 
 ## Tài liệu
 
@@ -90,6 +92,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 - [Kiến trúc real-time (Socket.io)](docs/realtime.md)
 - [Chuyển tuyến khẩn cấp: lệnh, điều phối, tiếp nhận & điều trị tiếp nối](docs/referrals.md)
 - [Thống kê & quản trị](docs/stats-admin.md)
+- [Kiểm thử bảo mật & chịu tải](docs/testing.md)
 - [Sinh tồn trên xe chuyển viện (offline-first)](docs/escort-vitals.md)
 
 ## Nhánh làm việc

@@ -26,7 +26,8 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "icd10:import": "tsx prisma/import-icd10.ts",
-    "sim:stats": "tsx prisma/sim-stats.ts"
+    "sim:stats": "tsx prisma/sim-stats.ts",
+    "load:socket": "tsx test/load/socket-load.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

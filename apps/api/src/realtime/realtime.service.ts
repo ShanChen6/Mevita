@@ -27,4 +27,9 @@ export class RealtimeService {
   emitToUser(userId: string, event: string, payload: unknown) {
     this.server?.to(rooms.user(userId)).emit(event, payload);
   }
+
+  /** Ngắt mọi kết nối realtime của một người (VD tài khoản bị khoá). */
+  disconnectUser(userId: string) {
+    this.server?.in(rooms.user(userId)).disconnectSockets(true);
+  }
 }

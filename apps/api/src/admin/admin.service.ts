@@ -1,8 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service.js';
 import type { AuthUser } from '../auth/auth.types.js';
+import { UserStatusService } from '../auth/user-status.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { RealtimeService } from '../realtime/realtime.service.js';
 import type { ListAuditQuery, ListUsersQuery } from './admin.schemas.js';
 
 const PAGE = 30;
@@ -13,6 +15,8 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly status: UserStatusService,
+    private readonly realtime: RealtimeService,
   ) {}
 
   async users({ q, role, status, page }: ListUsersQuery) {
@@ -73,6 +77,9 @@ export class AdminService {
             }),
           ]),
     ]);
+    // Có hiệu lực ngay: chặn access token còn hạn và ngắt kết nối realtime
+    this.status.set(id, isActive);
+    if (!isActive) this.realtime.disconnectUser(id);
     await this.audit.log({
       userId: admin.id,
       action: 'UPDATE',
