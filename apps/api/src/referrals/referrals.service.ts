@@ -16,7 +16,16 @@ import { RealtimeEvent } from '../realtime/realtime.events.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import { toVitalDto, vitalSelect } from './referral-vitals.service.js';
 import { belowRecommendation } from './transport.js';
-import type { CreateReferralInput, ListReferralsQuery } from './referrals.schemas.js';
+import { loadLevel } from '../coordination/capacity.js';
+import { rankDestination } from '../coordination/ranking.js';
+import { hasCoords, haversineKm, travelMinutes } from '../common/geo.js';
+import type {
+  AcceptReferralInput,
+  CreateReferralInput,
+  DestinationsQuery,
+  ListReferralsQuery,
+  RejectReferralInput,
+} from './referrals.schemas.js';
 
 const ACTIVE = ['PENDING', 'ACCEPTED'] as const;
 
@@ -110,6 +119,13 @@ const referralSelect = {
   vitalLogs: { select: vitalSelect, orderBy: { recordedAt: 'desc' }, take: 1 },
   transportMode: true,
   transportNote: true,
+  acceptanceType: true,
+  forwardNote: true,
+  redirectCategory: true,
+  redirectFacility: { select: { id: true, name: true } },
+  requiredSpecialty: { select: { code: true, name: true } },
+  escalationLevel: true,
+  escalatedAt: true,
   pickupRequestedAt: true,
   pickupAssignedAt: true,
   pickedUpAt: true,
@@ -170,33 +186,56 @@ export class ReferralsService {
    * Bệnh viện tuyến trên nhận chuyển tuyến: trong tỉnh trước, sau đó liên tỉnh.
    * Kèm chuyên khoa và số bác sĩ đang trực trực tuyến (kênh realtime).
    */
-  async destinations(user: AuthUser, q?: string) {
+  async destinations(user: AuthUser, { q, priority, specialty: specialtyCode }: DestinationsQuery) {
     const from = await this.facilityOf(user);
-    const facilities = await this.prisma.healthFacility.findMany({
-      where: {
-        isActive: true,
-        acceptsReferrals: true,
-        id: { not: from.id },
-        ...(q && { name: { contains: q, mode: 'insensitive' } }),
-      },
-      select: {
-        ...facilityBrief,
-        level: true,
-        specialties: { select: { specialty: { select: { code: true, name: true } } } },
-      },
-      orderBy: [{ level: 'asc' }, { name: 'asc' }],
-    });
+    const [facilities, specialty] = await Promise.all([
+      this.prisma.healthFacility.findMany({
+        where: {
+          isActive: true,
+          acceptsReferrals: true,
+          id: { not: from.id },
+          ...(q && { name: { contains: q, mode: 'insensitive' } }),
+        },
+        select: {
+          ...facilityBrief,
+          level: true,
+          erBedsTotal: true,
+          erBedsAvailable: true,
+          icuBedsAvailable: true,
+          capacityNote: true,
+          capacityUpdatedAt: true,
+          specialties: { select: { specialty: { select: { code: true, name: true } } } },
+        },
+        orderBy: [{ level: 'asc' }, { name: 'asc' }],
+      }),
+      specialtyCode
+        ? this.prisma.specialty.findUnique({
+            where: { code: specialtyCode },
+            select: { code: true, name: true },
+          })
+        : null,
+    ]);
     const provinceCode = from.commune.province.code;
-    return facilities
-      .map(({ specialties, ...f }) => ({
+    const now = new Date();
+    const rows = facilities.map(({ specialties, ...f }) => {
+      const km = hasCoords(from) && hasCoords(f) ? haversineKm(from, f) : null;
+      const { level, stale } = loadLevel(f, now);
+      const base = {
         ...f,
         specialties: specialties
           .map((s) => s.specialty)
           .sort((a, b) => a.name.localeCompare(b.name, 'vi')),
         sameProvince: f.commune.province.code === provinceCode,
         onDutyCount: this.realtime.presence.onDuty(f.id).length,
-      }))
-      .sort((a, b) => Number(b.sameProvince) - Number(a.sameProvince));
+        load: level,
+        capacityStale: stale,
+        distanceKm: km == null ? null : Math.round(km * 10) / 10,
+        travelMinutes: km == null ? null : travelMinutes(km),
+      };
+      return { ...base, ...rankDestination({ ...base, stale }, { priority, specialty }) };
+    });
+    rows.sort((a, b) => b.score - a.score || Number(b.sameProvince) - Number(a.sameProvince));
+    return rows.map((r, i) => ({ ...r, recommended: i === 0 && rows.length > 1 }));
   }
 
   /** Nhân viên cơ sở mình — chọn người đi kèm xe. */
@@ -271,6 +310,14 @@ export class ReferralsService {
         'Phương tiện thấp hơn khuyến nghị cho mức độ này — ghi rõ lý do (ít nhất 10 ký tự)',
       );
     const pickup = mode === 'PICKUP';
+    const requiredSpecialty = input.requiredSpecialtyCode
+      ? await this.prisma.specialty.findUnique({
+          where: { code: input.requiredSpecialtyCode },
+          select: { id: true },
+        })
+      : null;
+    if (input.requiredSpecialtyCode && !requiredSpecialty)
+      throw new BadRequestException('Chuyên khoa không hợp lệ');
     if (!pickup && input.etaMinutes == null)
       throw new BadRequestException('Nhập thời gian dự kiến xe tới');
 
@@ -308,6 +355,7 @@ export class ReferralsService {
             escortId: input.escortId,
             vehicleInfo: input.vehicleInfo,
             transportMode: mode,
+            requiredSpecialtyId: requiredSpecialty?.id ?? null,
             vehicleId: vehicle?.id ?? null,
             transportNote: input.transportNote,
             // Xe đón: bệnh nhân chưa rời trạm, giờ tới tính khi có xe nhận
@@ -446,11 +494,18 @@ export class ReferralsService {
    * Bệnh viện nhận xác nhận "Tiếp nhận & sẵn sàng ê-kíp" — tuyến dưới và người đi kèm nhận phản hồi ngay.
    * Chỉ một bác sĩ xác nhận được (cập nhật có điều kiện PENDING → ACCEPTED).
    */
-  async accept(id: string, user: AuthUser, preparationNote: string | null) {
+  async accept(id: string, user: AuthUser, input: AcceptReferralInput) {
     await this.assertReceiver(id, user);
     const { count } = await this.prisma.referral.updateMany({
       where: { id, status: 'PENDING' },
-      data: { status: 'ACCEPTED', acceptedAt: new Date(), acceptedById: user.id, preparationNote },
+      data: {
+        status: 'ACCEPTED',
+        acceptedAt: new Date(),
+        acceptedById: user.id,
+        preparationNote: input.preparationNote,
+        acceptanceType: input.acceptanceType,
+        forwardNote: input.acceptanceType === 'STABILIZE_FORWARD' ? input.forwardNote : null,
+      },
     });
     if (count === 0) throw new ConflictException('Ca này đã được xử lý bởi người khác');
     return this.afterResponse(id, user, 'accept');
@@ -469,13 +524,37 @@ export class ReferralsService {
   }
 
   /** Không thể tiếp nhận (hết giường, thiếu chuyên khoa…) — tuyến dưới chuyển nơi khác. */
-  async reject(id: string, user: AuthUser, reason: string) {
+  /**
+   * Đề nghị chuyển ca THƯỜNG sang cơ sở khác (Task B). Ca tối khẩn/khẩn không bị từ chối — bệnh viện tiếp nhận,
+   * ổn định rồi chuyển tiếp nếu thiếu chuyên khoa. Phải có lý do chuyên môn và cơ sở đề xuất cụ thể.
+   */
+  async reject(id: string, user: AuthUser, input: RejectReferralInput) {
     await this.assertReceiver(id, user);
+    const r = await this.prisma.referral.findUniqueOrThrow({
+      where: { id },
+      select: { priority: true, fromFacilityId: true, toFacilityId: true },
+    });
+    if (r.priority !== 'ROUTINE')
+      throw new ConflictException(
+        'Không được từ chối ca cấp cứu — chọn "Tiếp nhận, ổn định rồi chuyển tiếp" nếu thiếu chuyên khoa/thiết bị',
+      );
+    const target = await this.prisma.healthFacility.findFirst({
+      where: {
+        id: input.redirectFacilityId,
+        isActive: true,
+        acceptsReferrals: true,
+        NOT: { id: { in: [r.fromFacilityId, r.toFacilityId] } },
+      },
+      select: { id: true },
+    });
+    if (!target) throw new BadRequestException('Cơ sở đề xuất không hợp lệ');
     const { count } = await this.prisma.referral.updateMany({
       where: { id, status: 'PENDING' },
       data: {
         status: 'REJECTED',
-        rejectionReason: reason,
+        rejectionReason: input.reason,
+        redirectCategory: input.category,
+        redirectFacilityId: target.id,
         acceptedById: user.id,
         acceptedAt: new Date(),
       },
@@ -676,6 +755,9 @@ export class ReferralsService {
         facility: r.vehicle.facility.name,
       },
       estimatedArrivalAt: r.estimatedArrivalAt,
+      acceptanceType: r.acceptanceType,
+      forwardNote: r.forwardNote,
+      redirectFacility: r.redirectFacility,
       at: new Date(),
     };
     await Promise.all([

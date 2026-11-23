@@ -232,6 +232,20 @@ export async function seedDemo(prisma: PrismaClient) {
       skipDuplicates: true,
     });
   }
+  // Năng lực tiếp nhận mẫu (Task B) — bệnh viện tự cập nhật hằng ngày trên bảng điều phối
+  const capacity: Record<
+    string,
+    { erBedsTotal: number; erBedsAvailable: number; icuBedsAvailable: number }
+  > = {
+    'DEMO-BVDK-15': { erBedsTotal: 24, erBedsAvailable: 6, icuBedsAvailable: 2 },
+    'DEMO-BV-VIETDUC': { erBedsTotal: 60, erBedsAvailable: 14, icuBedsAvailable: 4 },
+  };
+  for (const [code, c] of Object.entries(capacity))
+    await prisma.healthFacility.update({
+      where: { code },
+      data: { ...c, capacityUpdatedAt: new Date() },
+    });
+
   // Xe chuyển viện (Task C): trạm chỉ có xe bán tải → ca cấp cứu nên yêu cầu xe đón
   for (const v of demoVehicles) {
     const { facility, ...data } = v;

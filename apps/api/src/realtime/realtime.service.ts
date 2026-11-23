@@ -28,6 +28,11 @@ export class RealtimeService {
     this.server?.to(rooms.user(userId)).emit(event, payload);
   }
 
+  /** Gửi tới điều phối viên / quản trị viên đang trực tuyến. */
+  emitToAdmins(event: string, payload: unknown) {
+    this.server?.to(rooms.admins).emit(event, payload);
+  }
+
   /** Ngắt mọi kết nối realtime của một người (VD tài khoản bị khoá). */
   disconnectUser(userId: string) {
     this.server?.in(rooms.user(userId)).disconnectSockets(true);

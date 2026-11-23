@@ -21,6 +21,7 @@ export const referralFormSchema = z
     transportMode: z.enum(['FACILITY_VEHICLE', 'PICKUP', 'EMS_115', 'FAMILY', 'OTHER']),
     vehicleId: z.string(),
     transportNote: z.string().trim().max(500),
+    requiredSpecialtyCode: z.string(),
   })
   .refine(
     (v) =>

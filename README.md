@@ -92,6 +92,7 @@ Tài khoản demo (mật khẩu `SEED_DEMO_PASSWORD`, mặc định `Mevita@2026
 - [Kiến trúc real-time (Socket.io)](docs/realtime.md)
 - [Chuyển tuyến khẩn cấp: lệnh, điều phối, tiếp nhận & điều trị tiếp nối](docs/referrals.md)
 - [Xe chuyển viện & theo dõi vị trí](docs/transport.md)
+- [Điều phối thay cho từ chối: năng lực, gợi ý, leo thang](docs/coordination.md)
 - [Thống kê & quản trị](docs/stats-admin.md)
 - [Kiểm thử bảo mật & chịu tải](docs/testing.md)
 - [Triển khai lên Internet (Neon · Render · Vercel)](docs/deployment.md)

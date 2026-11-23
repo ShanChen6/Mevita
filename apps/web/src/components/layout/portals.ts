@@ -86,6 +86,7 @@ export const portals: Record<Portal, PortalConfig> = {
     accentClass: 'bg-violet-600',
     nav: [
       { href: '/admin', label: 'Thống kê', icon: BarChart3, exact: true },
+      { href: '/admin/coordination', label: 'Điều phối', icon: Siren },
       { href: '/admin/users', label: 'Tài khoản', icon: Users },
       { href: '/admin/audit', label: 'Nhật ký truy cập', icon: ScrollText },
     ],

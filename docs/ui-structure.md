@@ -37,6 +37,7 @@ src/app/
 |            | `/province/records`         | Hồ sơ điều trị tiếp nối                                       | 5.1      |
 |            | `/province/vehicles`        | Xe chuyển viện của bệnh viện, yêu cầu xe đón trên Tổng quan   | C        |
 | Quản trị   | `/admin`                    | Thống kê: đặt lịch, chuyển tuyến, mô hình bệnh tật            | 5.2      |
+|            | `/admin/coordination`       | Điều phối: ca chậm phản hồi, năng lực bệnh viện, bản đồ, xe   | B        |
 |            | `/admin/users`              | Tài khoản: tìm kiếm, khoá / mở khoá                           | 5.2      |
 |            | `/admin/audit`              | Nhật ký truy cập                                              | 5.2      |
 

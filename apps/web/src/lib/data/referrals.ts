@@ -6,6 +6,8 @@ import { notFound, redirect } from 'next/navigation';
 import { ApiError, apiFetch } from '@/lib/api';
 import { ACCESS_COOKIE } from '@/lib/auth/config';
 import type {
+  CoordinationOverview,
+  FacilityCapacity,
   PickupRequest,
   Referral,
   ReferralDestination,
@@ -28,7 +30,15 @@ async function authed<T>(path: string): Promise<T> {
   }
 }
 
-export const getDestinations = () => authed<ReferralDestination[]>('/referrals/destinations');
+export const getDestinations = (
+  priority: 'CRITICAL' | 'URGENT' | 'ROUTINE' = 'URGENT',
+  specialty?: string,
+) =>
+  authed<ReferralDestination[]>(
+    `/referrals/destinations?priority=${priority}${specialty ? `&specialty=${encodeURIComponent(specialty)}` : ''}`,
+  );
+export const getCapacity = () => authed<FacilityCapacity>('/coordination/capacity');
+export const getCoordinationOverview = () => authed<CoordinationOverview>('/coordination/overview');
 export const getEscorts = () => authed<StaffOption[]>('/referrals/escorts');
 
 export const listReferrals = (

@@ -115,6 +115,8 @@ Bác sĩ được chuyển thẳng vào trang khám của hồ sơ mới. Phía 
 - Lịch sử khám của bệnh nhân (cổng bệnh nhân và tra cứu của nhân viên) gắn nhãn **"Tiếp nối chuyển tuyến CT… từ …"**. Tuyến xã xem được hồ sơ tiếp nối sau khi ký (chính sách truy cập theo phiếu chuyển tuyến).
 - Không tiếp nhận được phiếu đã huỷ/từ chối (409); bấm lại "Xe đã tới" không tạo hồ sơ trùng; tuyến xã không tự đánh dấu "đã tới".
 
+> **Cập nhật Task B:** ca tối khẩn/khẩn không còn nút "Không thể tiếp nhận" — thay bằng "Tiếp nhận – ổn định – chuyển tiếp"; ca thường chỉ được đề nghị chuyển kèm lý do chuyên môn và cơ sở đề xuất. Xem [coordination.md](coordination.md).
+
 ## Khi không ai trực trực tuyến
 
 Lệnh vẫn được lưu và hiện trên bảng điều phối khi bác sĩ bệnh viện mở hệ thống. Form cảnh báo trước khi gửi, và sau khi gửi (`delivered = 0`) màn hình nhắc **gọi đường dây nóng** (`emergencyPhone` của cơ sở, dữ liệu mẫu: BVĐK Lào Cai `0900 111 115`, Việt Đức `0900 222 115`).

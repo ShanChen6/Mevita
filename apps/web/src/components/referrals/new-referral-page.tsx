@@ -21,7 +21,7 @@ async function Content({
   searchParams: SearchParams;
   portal: 'commune' | 'province';
 }) {
-  const { record: recordId } = await searchParams;
+  const { record: recordId, to } = await searchParams;
   if (typeof recordId !== 'string') {
     return (
       <Card className="items-center gap-3 px-6 py-10 text-center">
@@ -36,9 +36,10 @@ async function Content({
       </Card>
     );
   }
-  const [record, destinations, escorts, transport] = await Promise.all([
-    getRecord(recordId),
-    getDestinations(),
+  const record = await getRecord(recordId);
+  const priority = record.encounterType === 'EMERGENCY' ? 'CRITICAL' : 'URGENT';
+  const [destinations, escorts, transport] = await Promise.all([
+    getDestinations(priority),
     getEscorts(),
     getTransportOptions(),
   ]);
@@ -68,18 +69,21 @@ async function Content({
         </p>
       )}
       <ReferralForm
+        // Dựng lại form khi đổi phiếu khám / bệnh viện chọn sẵn (Next giữ trạng thái trang cùng đường dẫn)
+        key={`${record.id}-${typeof to === 'string' ? to : ''}`}
         portal={portal}
         recordId={record.id}
         destinations={destinations}
         escorts={escorts}
         transport={transport}
+        initialTo={typeof to === 'string' ? to : undefined}
         defaults={{
           reason: primary
             ? `${primary.icdCode} ${primary.name} — vượt khả năng chuyên môn, cần điều trị tuyến trên`
             : record.chiefComplaint,
           clinicalSummary: buildClinicalSummary(record, now),
           initialTreatment: buildInitialTreatment(record),
-          priority: record.encounterType === 'EMERGENCY' ? 'CRITICAL' : 'URGENT',
+          priority,
         }}
       />
     </>

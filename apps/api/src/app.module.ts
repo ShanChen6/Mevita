@@ -17,6 +17,7 @@ import { RealtimeModule } from './realtime/realtime.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { StatsModule } from './stats/stats.module.js';
 import { VehiclesModule } from './vehicles/vehicles.module.js';
+import { CoordinationModule } from './coordination/coordination.module.js';
 import { ReferralsModule } from './referrals/referrals.module.js';
 import { HealthController } from './health/health.controller.js';
 import { PatientsModule } from './patients/patients.module.js';
@@ -41,6 +42,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     ReferralsModule,
     StatsModule,
     VehiclesModule,
+    CoordinationModule,
     AdminModule,
     AdministrativeUnitsModule,
     PatientsModule,

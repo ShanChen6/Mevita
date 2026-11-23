@@ -510,13 +510,13 @@ describe('Chuyển tuyến khẩn cấp (e2e)', () => {
           },
         })
       ).id;
-    const send = async (sourceRecordId: string) =>
+    const send = async (sourceRecordId: string, extra: Record<string, unknown> = {}) =>
       (
         (
           await http()
             .post('/api/referrals')
             .set(as('commune'))
-            .send(body({ sourceRecordId }))
+            .send(body({ sourceRecordId, ...extra }))
             .expect(201)
         ).body as { referral: { id: string } }
       ).referral.id;
@@ -578,7 +578,11 @@ describe('Chuyển tuyến khẩn cấp (e2e)', () => {
       await http()
         .post(`/api/referrals/${id}/reject`)
         .set(as('hospital'))
-        .send({ reason: 'Hết giường hồi sức' })
+        .send({
+          reason: 'Không có chuyên khoa',
+          category: 'NO_SPECIALTY',
+          redirectFacilityId: fac.central,
+        })
         .expect(409);
 
       // Cập nhật ghi chú chuẩn bị
@@ -600,37 +604,88 @@ describe('Chuyển tuyến khẩn cấp (e2e)', () => {
       await http().post(`/api/referrals/${id}/accept`).set(as('central')).send({}).expect(404);
     });
 
-    it('không thể tiếp nhận → tuyến xã nhận lý do và gửi lại cho bệnh viện khác', async (ctx) => {
+    it('ca cấp cứu không bị từ chối: chỉ tiếp nhận, hoặc tiếp nhận – ổn định – chuyển tiếp (Task B)', async (ctx) => {
       if (!dbReady) return ctx.skip();
-      const recId = await newRecord('R');
-      const id = await send(recId);
-      const commune = await connect('commune');
-      const ev = next<Update>(commune, 'referral_updated');
+      const id = await send(await newRecord('CF'));
+      const res409 = await http()
+        .post(`/api/referrals/${id}/reject`)
+        .set(as('hospital'))
+        .send({ reason: 'Hết giường hồi sức', category: 'OTHER', redirectFacilityId: fac.central })
+        .expect(409);
+      expect((res409.body as { message: string }).message).toMatch(/Không được từ chối ca cấp cứu/);
       await http()
-        .post(`/api/referrals/${id}/reject`)
+        .post(`/api/referrals/${id}/accept`)
         .set(as('hospital'))
-        .send({ reason: 'x' })
+        .send({ acceptanceType: 'STABILIZE_FORWARD', forwardNote: 'ngắn' })
         .expect(400);
+      const commune = await connect('commune');
+      const ev = next<Update & { acceptanceType: string; forwardNote: string }>(
+        commune,
+        'referral_updated',
+      );
+      const plan = 'Không có phẫu thuật thần kinh — ổn định rồi chuyển BV TW';
       const res = await http()
-        .post(`/api/referrals/${id}/reject`)
+        .post(`/api/referrals/${id}/accept`)
         .set(as('hospital'))
-        .send({ reason: 'Hết giường hồi sức, máy thở đang dùng hết' })
+        .send({ acceptanceType: 'STABILIZE_FORWARD', forwardNote: plan })
         .expect(200);
       expect(res.body).toMatchObject({
+        status: 'ACCEPTED',
+        acceptanceType: 'STABILIZE_FORWARD',
+        forwardNote: plan,
+      });
+      expect(await ev).toMatchObject({ acceptanceType: 'STABILIZE_FORWARD', forwardNote: plan });
+    });
+
+    it('ca thường: chỉ đề nghị chuyển với lý do chuyên môn + cơ sở đề xuất; tuyến xã gửi lại nơi được đề xuất', async (ctx) => {
+      if (!dbReady) return ctx.skip();
+      const recId = await newRecord('R');
+      const id = await send(recId, { priority: 'ROUTINE' });
+      const commune = await connect('commune');
+      const ev = next<Update & { redirectFacility: { id: string } }>(commune, 'referral_updated');
+      const reject = (b: object) =>
+        http().post(`/api/referrals/${id}/reject`).set(as('hospital')).send(b);
+      await reject({
+        reason: 'x',
+        category: 'NO_SPECIALTY',
+        redirectFacilityId: fac.central,
+      }).expect(400);
+      await reject({ reason: 'Quá tải, hết giường', redirectFacilityId: fac.central }).expect(400); // thiếu lý do chuyên môn
+      await reject({
+        reason: 'Quá tải, hết giường',
+        category: 'OVERLOAD',
+        redirectFacilityId: fac.central,
+      }).expect(400);
+      await reject({
+        reason: 'Không có chuyên khoa',
+        category: 'NO_SPECIALTY',
+        redirectFacilityId: fac.hospital,
+      }).expect(400); // chính mình
+      await reject({
+        reason: 'Không có chuyên khoa',
+        category: 'NO_SPECIALTY',
+        redirectFacilityId: fac.otherStation,
+      }).expect(400); // trạm không nhận
+      const res = await reject({
+        reason: 'Không có chuyên khoa phẫu thuật thần kinh',
+        category: 'NO_SPECIALTY',
+        redirectFacilityId: fac.central,
+      }).expect(200);
+      expect(res.body).toMatchObject({
         status: 'REJECTED',
-        rejectionReason: expect.stringMatching(/Hết giường/),
+        redirectCategory: 'NO_SPECIALTY',
+        redirectFacility: { id: fac.central },
       });
       expect(await ev).toMatchObject({
         status: 'REJECTED',
         side: 'outgoing',
-        rejectionReason: expect.stringMatching(/máy thở/),
+        redirectFacility: { id: fac.central },
       });
       await http().post(`/api/referrals/${id}/accept`).set(as('hospital')).send({}).expect(409);
-      // Phiếu bị từ chối không còn "đang thực hiện" → được lập lệnh mới tới bệnh viện khác
       await http()
         .post('/api/referrals')
         .set(as('commune'))
-        .send(body({ sourceRecordId: recId, toFacilityId: fac.central }))
+        .send(body({ sourceRecordId: recId, toFacilityId: fac.central, priority: 'ROUTINE' }))
         .expect(201);
     });
   });

@@ -90,7 +90,9 @@ export function IncomingAlertDialog({
           <div className="flex items-center gap-2">
             <Siren className="size-6 animate-bounce text-red-600" aria-hidden />
             <DialogPrimitive.Title className="text-xl font-bold">
-              Ca chuyển tuyến mới
+              {current.escalated
+                ? `Nhắc lại: ca chưa được phản hồi (${current.waitedMinutes ?? '?'} phút)`
+                : 'Ca chuyển tuyến mới'}
             </DialogPrimitive.Title>
             <span className="text-muted-foreground ml-auto font-mono text-sm">{current.code}</span>
           </div>

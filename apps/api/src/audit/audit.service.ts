@@ -16,7 +16,8 @@ export interface AuditEntry {
     | 'UPDATE'
     | 'DELETE'
     | 'SIGN'
-    | 'ACCESS_DENIED';
+    | 'ACCESS_DENIED'
+    | 'ESCALATE';
   entityType: string;
   entityId?: string | null;
   metadata?: Prisma.InputJsonValue;

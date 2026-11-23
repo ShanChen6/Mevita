@@ -18,7 +18,12 @@ import { PriorityBadge, ReferralStatusBadge } from '@/components/shared/status-b
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getSession } from '@/lib/auth/session';
-import { findReferralTrack, getReferral, getReferralVitals } from '@/lib/data/referrals';
+import {
+  findReferralTrack,
+  getDestinations,
+  getReferral,
+  getReferralVitals,
+} from '@/lib/data/referrals';
 import type { Referral } from '@/lib/data/types';
 import { ageAt, formatDateTime, formatDecimal } from '@/lib/format';
 import { bloodType, encounterType, gender } from '@/lib/labels';
@@ -76,6 +81,16 @@ async function Detail({
     findReferralTrack(id),
   ]);
   const viewerFacility = session?.facilityId;
+  const canRespond = r.toFacility.id === viewerFacility || session?.role === 'ADMIN';
+  // Ca thường đang chờ: danh sách cơ sở để đề nghị chuyển (Task B)
+  const redirectOptions =
+    canRespond && r.status === 'PENDING' && r.priority === 'ROUTINE' && session?.role !== 'ADMIN'
+      ? (await getDestinations('ROUTINE', r.requiredSpecialty?.code)).map((d) => ({
+          id: d.id,
+          name: d.name,
+          note: d.reasons.slice(0, 2).join(', ') || d.commune.province.fullName,
+        }))
+      : [];
   const p = r.patient;
   const now = new Date().toISOString();
   const src = r.sourceRecord;
@@ -132,7 +147,8 @@ async function Detail({
       <ReferralResponse
         referral={r}
         portal={portal}
-        canRespond={r.toFacility.id === viewerFacility || session?.role === 'ADMIN'}
+        canRespond={canRespond}
+        redirectOptions={redirectOptions}
       />
 
       {(r.transportMode || track.length > 0) && (

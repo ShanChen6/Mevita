@@ -37,6 +37,8 @@ export const createReferralSchema = z.object({
   transportMode: z.enum(TransportMode).nullish(),
   /** Xe của cơ sở (khi transportMode = FACILITY_VEHICLE) */
   vehicleId: z.uuid().nullish(),
+  /** Chuyên khoa cần ở tuyến trên (mã), VD NEUROSURGERY */
+  requiredSpecialtyCode: z.string().trim().max(50).nullish(),
   /** Lý do khi chọn phương tiện thấp hơn khuyến nghị */
   transportNote: z
     .string()
@@ -49,7 +51,12 @@ export type CreateReferralInput = z.infer<typeof createReferralSchema>;
 
 export const destinationsQuerySchema = z.object({
   q: z.string().trim().max(100).optional(),
+  /** Mức độ ca — chấm điểm gợi ý (Task B) */
+  priority: z.enum(ReferralPriority).default('URGENT'),
+  /** Mã chuyên khoa cần ở tuyến trên */
+  specialty: z.string().trim().max(50).optional(),
 });
+export type DestinationsQuery = z.infer<typeof destinationsQuerySchema>;
 
 export const listReferralsQuerySchema = z.object({
   direction: z.enum(['incoming', 'outgoing']),
@@ -67,22 +74,43 @@ export const cancelReferralSchema = z.object({
 });
 
 /** Tuyến trên xác nhận tiếp nhận & sẵn sàng ê-kíp (ghi chú chuẩn bị tuỳ chọn) */
-export const acceptReferralSchema = z.object({
-  preparationNote: z
-    .string()
-    .trim()
-    .max(1000)
-    .nullish()
-    .transform((v) => v || null),
-});
+export const acceptReferralSchema = z
+  .object({
+    preparationNote: z
+      .string()
+      .trim()
+      .max(1000)
+      .nullish()
+      .transform((v) => v || null),
+    /** READY: sẵn sàng ê-kíp; STABILIZE_FORWARD: tiếp nhận để ổn định rồi chuyển tiếp (Task B) */
+    acceptanceType: z.enum(['READY', 'STABILIZE_FORWARD']).default('READY'),
+    forwardNote: z
+      .string()
+      .trim()
+      .max(500)
+      .nullish()
+      .transform((v) => v || null),
+  })
+  .refine((v) => v.acceptanceType !== 'STABILIZE_FORWARD' || (v.forwardNote?.length ?? 0) >= 10, {
+    message:
+      'Ghi kế hoạch ổn định & chuyển tiếp (ít nhất 10 ký tự), VD: "Không có PTTK — ổn định rồi chuyển BV Việt Đức"',
+    path: ['forwardNote'],
+  });
+export type AcceptReferralInput = z.infer<typeof acceptReferralSchema>;
 
 export const preparationSchema = z.object({
   preparationNote: text(3, 1000, 'ghi chú chuẩn bị'),
 });
 
+/** Đề nghị chuyển ca THƯỜNG sang cơ sở khác — phải có lý do chuyên môn và cơ sở đề xuất (Task B) */
 export const rejectReferralSchema = z.object({
-  reason: text(5, 500, 'lý do không thể tiếp nhận'),
+  reason: text(5, 500, 'lý do'),
+  category: z.enum(['NO_SPECIALTY', 'NO_EQUIPMENT', 'NOT_INDICATED', 'OTHER'], {
+    error: 'Chọn lý do chuyên môn (quá tải không phải lý do hợp lệ)',
+  }),
+  redirectFacilityId: z.uuid('Chọn cơ sở đề xuất'),
 });
+export type RejectReferralInput = z.infer<typeof rejectReferralSchema>;
 
 const int = (min: number, max: number, label: string) =>
   z
@@ -228,3 +256,27 @@ export const updateVehicleSchema = z
   })
   .partial();
 export type UpdateVehicleInput = z.infer<typeof updateVehicleSchema>;
+
+export const capacitySchema = z
+  .object({
+    erBedsTotal: z.number().int().min(0).max(2000),
+    erBedsAvailable: z.number().int().min(0).max(2000),
+    icuBedsAvailable: z
+      .number()
+      .int()
+      .min(0)
+      .max(2000)
+      .nullish()
+      .transform((v) => v ?? null),
+    capacityNote: z
+      .string()
+      .trim()
+      .max(300)
+      .nullish()
+      .transform((v) => v || null),
+  })
+  .refine((v) => v.erBedsAvailable <= v.erBedsTotal, {
+    message: 'Giường trống không vượt tổng số giường',
+    path: ['erBedsAvailable'],
+  });
+export type CapacityInput = z.infer<typeof capacitySchema>;

@@ -19,7 +19,10 @@ import {
   dispatchSchema,
   locationBatchSchema,
   transportOptionsSchema,
+  type AcceptReferralInput,
+  type DestinationsQuery,
   type LocationEntryInput,
+  type RejectReferralInput,
   preparationSchema,
   rejectReferralSchema,
   createReferralSchema,
@@ -47,9 +50,9 @@ export class ReferralsController {
   @Get('destinations')
   destinations(
     @CurrentUser() user: AuthUser,
-    @Query(new ZodValidationPipe(destinationsQuerySchema)) query: { q?: string },
+    @Query(new ZodValidationPipe(destinationsQuerySchema)) query: DestinationsQuery,
   ) {
-    return this.referrals.destinations(user, query.q);
+    return this.referrals.destinations(user, query);
   }
 
   /** Nhân viên cơ sở mình (chọn người đi kèm xe) */
@@ -132,9 +135,9 @@ export class ReferralsController {
   accept(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthUser,
-    @Body(new ZodValidationPipe(acceptReferralSchema)) body: { preparationNote: string | null },
+    @Body(new ZodValidationPipe(acceptReferralSchema)) body: AcceptReferralInput,
   ) {
-    return this.referrals.accept(id, user, body.preparationNote);
+    return this.referrals.accept(id, user, body);
   }
 
   /** Tuyến trên: cập nhật ghi chú chuẩn bị sau khi đã tiếp nhận */
@@ -153,9 +156,9 @@ export class ReferralsController {
   reject(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthUser,
-    @Body(new ZodValidationPipe(rejectReferralSchema)) body: { reason: string },
+    @Body(new ZodValidationPipe(rejectReferralSchema)) body: RejectReferralInput,
   ) {
-    return this.referrals.reject(id, user, body.reason);
+    return this.referrals.reject(id, user, body);
   }
 
   /** Tuyến trên: xe đã tới — tiếp nhận bệnh nhân và mở hồ sơ điều trị tiếp nối */

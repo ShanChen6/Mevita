@@ -249,21 +249,28 @@ model HealthFacility {
   longitude           Float?
   /// Có tiếp nhận chuyển tuyến cấp cứu hay không
   acceptsReferrals    Boolean       @default(false) @map("accepts_referrals")
+  /// Năng lực tiếp nhận (Task B) — bệnh viện tự cập nhật; mức tải tính từ giường cấp cứu còn trống
+  erBedsTotal         Int?          @map("er_beds_total")
+  erBedsAvailable     Int?          @map("er_beds_available")
+  icuBedsAvailable    Int?          @map("icu_beds_available")
+  capacityNote        String?       @map("capacity_note") @db.VarChar(300)
+  capacityUpdatedAt   DateTime?     @map("capacity_updated_at")
   /// Thời lượng mỗi khung giờ khám (phút) dùng cho đặt lịch
   slotDurationMinutes Int           @default(15) @map("slot_duration_minutes")
   isActive            Boolean       @default(true) @map("is_active")
   createdAt           DateTime      @default(now()) @map("created_at")
   updatedAt           DateTime      @updatedAt @map("updated_at")
 
-  commune           Commune                @relation(fields: [communeCode], references: [code], onUpdate: Cascade, onDelete: Restrict)
-  specialties       FacilitySpecialty[]
-  openingHours      FacilityOpeningHours[]
-  staff             StaffProfile[]
-  appointments      Appointment[]
-  medicalRecords    MedicalRecord[]
-  vehicles          Vehicle[]
-  outgoingReferrals Referral[]             @relation("ReferralFrom")
-  incomingReferrals Referral[]             @relation("ReferralTo")
+  commune             Commune                @relation(fields: [communeCode], references: [code], onUpdate: Cascade, onDelete: Restrict)
+  specialties         FacilitySpecialty[]
+  openingHours        FacilityOpeningHours[]
+  staff               StaffProfile[]
+  appointments        Appointment[]
+  medicalRecords      MedicalRecord[]
+  vehicles            Vehicle[]
+  outgoingReferrals   Referral[]             @relation("ReferralFrom")
+  incomingReferrals   Referral[]             @relation("ReferralTo")
+  redirectedReferrals Referral[]             @relation("ReferralRedirect")
 
   @@index([communeCode])
   @@index([type])
@@ -299,6 +306,8 @@ model Specialty {
   staff          StaffProfile[]
   appointments   Appointment[]
   medicalRecords MedicalRecord[]
+
+  requiredByReferrals Referral[] @relation("ReferralRequiredSpecialty")
 
   @@map("specialties")
 }
@@ -692,6 +701,22 @@ model Referral {
   /// Hồ sơ điều trị tiếp nối tại tuyến trên (Task 5.1)
   continuationRecord MedicalRecord?     @relation("ReferralContinuation")
 
+  /// Điều phối (Task B)
+  /// Chuyên khoa cần ở tuyến trên (bác sĩ tuyến dưới chọn khi lập lệnh)
+  requiredSpecialtyId String?             @map("required_specialty_id") @db.Uuid
+  /// Cách tiếp nhận: sẵn sàng ê-kíp, hoặc ổn định rồi chuyển tiếp (ca cấp cứu không bị từ chối)
+  acceptanceType      ReferralAcceptance? @map("acceptance_type")
+  /// Kế hoạch chuyển tiếp khi tiếp nhận để ổn định
+  forwardNote         String?             @map("forward_note") @db.VarChar(500)
+  /// Ca thường được đề nghị chuyển: lý do chuyên môn & cơ sở đề xuất
+  redirectCategory    RedirectCategory?   @map("redirect_category")
+  redirectFacilityId  String?             @map("redirect_facility_id") @db.Uuid
+  /// Leo thang khi bệnh viện chậm phản hồi: 0 chưa, 1 đã nhắc kíp trực, 2 đã báo điều phối Sở Y tế
+  escalationLevel     Int                 @default(0) @map("escalation_level")
+  escalatedAt         DateTime?           @map("escalated_at")
+  requiredSpecialty   Specialty?          @relation("ReferralRequiredSpecialty", fields: [requiredSpecialtyId], references: [id], onDelete: SetNull)
+  redirectFacility    HealthFacility?     @relation("ReferralRedirect", fields: [redirectFacilityId], references: [id], onDelete: SetNull)
+
   /// Vận chuyển (Task C): phương thức, xe được giao, các mốc điều xe
   transportMode      TransportMode?     @map("transport_mode")
   vehicleId          String?            @map("vehicle_id") @db.Uuid
@@ -832,4 +857,22 @@ model ReferralLocation {
 
   @@index([referralId, recordedAt])
   @@map("referral_locations")
+}
+
+enum ReferralAcceptance {
+  /// Tiếp nhận & sẵn sàng ê-kíp điều trị
+  READY
+  /// Tiếp nhận để sơ cứu, ổn định rồi chuyển tiếp lên tuyến phù hợp (thiếu chuyên khoa/thiết bị)
+  STABILIZE_FORWARD
+}
+
+/// Lý do chuyên môn khi đề nghị chuyển ca thường sang cơ sở khác — quá tải KHÔNG phải lý do hợp lệ
+enum RedirectCategory {
+  /// Không có chuyên khoa phù hợp
+  NO_SPECIALTY
+  /// Không có thiết bị / kỹ thuật cần thiết
+  NO_EQUIPMENT
+  /// Chưa có chỉ định điều trị ở tuyến này (nên khám tại cơ sở khác)
+  NOT_INDICATED
+  OTHER
 }

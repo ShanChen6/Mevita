@@ -11,6 +11,10 @@ export interface MapPlace {
   latitude: number;
   longitude: number;
   kind: 'from' | 'to' | 'vehicle';
+  /** Màu tô riêng (VD bệnh viện theo mức tải) */
+  color?: string;
+  /** Nhãn luôn hiện (mặc định: trừ xe) */
+  permanent?: boolean;
 }
 
 const STYLE = {
@@ -39,9 +43,11 @@ function Fit({ points }: { points: LatLngTuple[] }) {
 export default function VehicleMap({
   places,
   track,
+  className = 'h-72',
 }: {
   places: MapPlace[];
   track: LatLngTuple[];
+  className?: string;
 }) {
   const anchors: LatLngTuple[] = places.map((p) => [p.latitude, p.longitude]);
   const center = anchors[0] ?? [21.03, 105.85];
@@ -50,7 +56,7 @@ export default function VehicleMap({
       center={center}
       zoom={10}
       scrollWheelZoom={false}
-      className="h-72 w-full rounded-lg border"
+      className={`${className} w-full rounded-lg border`}
       attributionControl
     >
       <TileLayer
@@ -63,12 +69,16 @@ export default function VehicleMap({
       )}
       {places.map((p) => (
         <CircleMarker
-          key={`${p.kind}-${p.label}`}
+          key={`${p.kind}-${p.label}-${p.latitude}`}
           center={[p.latitude, p.longitude]}
           radius={p.kind === 'vehicle' ? 9 : 7}
-          pathOptions={{ ...STYLE[p.kind], weight: p.kind === 'vehicle' ? 3 : 2, fillOpacity: 1 }}
+          pathOptions={{
+            ...(p.color ? { color: '#ffffff', fillColor: p.color } : STYLE[p.kind]),
+            weight: p.kind === 'vehicle' || p.color ? 3 : 2,
+            fillOpacity: 1,
+          }}
         >
-          <Tooltip direction="top" offset={[0, -8]} permanent={p.kind !== 'vehicle'}>
+          <Tooltip direction="top" offset={[0, -8]} permanent={p.permanent ?? p.kind !== 'vehicle'}>
             {p.label}
           </Tooltip>
         </CircleMarker>

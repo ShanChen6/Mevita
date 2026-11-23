@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { CalendarCheck, CheckCircle2, Clock, UserCheck } from 'lucide-react';
 
@@ -13,6 +14,8 @@ import { StaffBoard } from './staff-board';
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 async function Board({ searchParams }: { searchParams: SearchParams }) {
+  // Phụ thuộc "hôm nay" — luôn render theo request, không dựng sẵn
+  await connection();
   const sp = await searchParams;
   const today = vnDate();
   const date = typeof sp.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : today;

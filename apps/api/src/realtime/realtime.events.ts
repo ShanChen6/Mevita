@@ -18,6 +18,10 @@ export const RealtimeEvent = {
   VehicleLocation: 'vehicle_location',
   /** Xe vào bán kính 1 km quanh bệnh viện nhận */
   VehicleArriving: 'vehicle_arriving',
+  /** Bệnh viện chậm phản hồi ca cấp cứu — leo thang (Task B) */
+  ReferralEscalated: 'referral_escalated',
+  /** Bệnh viện cập nhật năng lực tiếp nhận (gửi điều phối viên) */
+  CapacityUpdate: 'capacity_update',
 } as const;
 
 export const NAMESPACE = '/realtime';

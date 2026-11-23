@@ -1,10 +1,19 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertTriangle, Building2, Loader2, MapPin, Phone, Send, Users } from 'lucide-react';
+import {
+  AlertTriangle,
+  Building2,
+  Loader2,
+  MapPin,
+  Phone,
+  Send,
+  Sparkles,
+  Users,
+} from 'lucide-react';
 
 import { FormError } from '@/components/auth/form-message';
 import { Badge } from '@/components/ui/badge';
@@ -13,22 +22,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { createReferral } from '@/lib/actions/referrals';
+import { createReferral, rankDestinations } from '@/lib/actions/referrals';
+import { NativeSelect } from '@/components/ui/native-select';
 import { TransportSection } from './transport-section';
 import { referralFormSchema, type ReferralFormValues } from '@/lib/data/referral-schema';
 import type { ReferralDestination, StaffOption, TransportOptions } from '@/lib/data/types';
-import { facilityType, referralPriority, type ReferralPriority } from '@/lib/labels';
+import { facilityType, loadLevel, referralPriority, type ReferralPriority } from '@/lib/labels';
 import { cn } from '@/lib/utils';
 
 const PRIORITIES: ReferralPriority[] = ['CRITICAL', 'URGENT', 'ROUTINE'];
 
-function DestinationCard({ d, selected }: { d: ReferralDestination; selected: boolean }) {
+function DestinationCard({
+  d,
+  selected,
+  specialty,
+}: {
+  d: ReferralDestination;
+  selected: boolean;
+  specialty: string;
+}) {
+  const beds =
+    d.erBedsAvailable != null && d.erBedsTotal != null
+      ? `Còn ${d.erBedsAvailable}/${d.erBedsTotal} giường cấp cứu${d.icuBedsAvailable != null ? ` · ${d.icuBedsAvailable} hồi sức` : ''}`
+      : 'Chưa cập nhật số giường';
   return (
     <span
       className={cn(
         'flex h-full flex-col gap-2 rounded-lg border p-3 text-sm transition-colors',
         selected ? 'border-primary bg-primary/5 ring-primary/30 ring-2' : 'hover:bg-accent',
       )}
+      data-testid={`dest-${d.id}`}
     >
       <span className="flex items-start gap-2">
         <Building2 className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
@@ -37,16 +60,48 @@ function DestinationCard({ d, selected }: { d: ReferralDestination; selected: bo
           <span className="text-muted-foreground block text-xs">
             {facilityType[d.type]} · <MapPin className="inline size-3" aria-hidden />{' '}
             {d.commune.province.fullName}
+            {!d.sameProvince && ' · liên tỉnh'}
           </span>
         </span>
+        {d.recommended && (
+          <Badge className="bg-primary text-primary-foreground shrink-0 border-transparent">
+            <Sparkles className="size-3" aria-hidden /> Gợi ý
+          </Badge>
+        )}
       </span>
-      {d.onDutyCount > 0 ? (
-        <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-          <Users className="size-3.5" aria-hidden /> {d.onDutyCount} bác sĩ đang trực trực tuyến
-        </span>
-      ) : (
-        <span className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-          <AlertTriangle className="size-3.5" aria-hidden /> Chưa có ai trực trực tuyến
+      <span className="flex flex-wrap items-center gap-1.5 text-xs">
+        <Badge className={cn('border-transparent', loadLevel[d.load].className)}>
+          {loadLevel[d.load].label}
+          {d.capacityStale && d.load !== 'UNKNOWN' ? ' (số liệu cũ)' : ''}
+        </Badge>
+        <span>{beds}</span>
+        {d.travelMinutes != null && (
+          <span className="text-muted-foreground">
+            · ~{d.travelMinutes} phút
+            {d.distanceKm != null ? ` (${Math.round(d.distanceKm * 1.35)} km)` : ''}
+          </span>
+        )}
+      </span>
+      <span
+        className={cn(
+          'flex items-center gap-1.5 text-xs font-medium',
+          d.onDutyCount > 0
+            ? 'text-emerald-700 dark:text-emerald-400'
+            : 'text-amber-700 dark:text-amber-400',
+        )}
+      >
+        {d.onDutyCount > 0 ? (
+          <Users className="size-3.5" aria-hidden />
+        ) : (
+          <AlertTriangle className="size-3.5" aria-hidden />
+        )}
+        {d.onDutyCount > 0
+          ? `${d.onDutyCount} bác sĩ đang trực trực tuyến`
+          : 'Chưa có ai trực trực tuyến'}
+      </span>
+      {d.warnings.filter((w) => !/trực tuyến|số giường|giường đã cũ/.test(w)).length > 0 && (
+        <span className="text-xs text-amber-800 dark:text-amber-300">
+          ⚠ {d.warnings.filter((w) => !/trực tuyến|số giường|giường đã cũ/.test(w)).join(' · ')}
         </span>
       )}
       {d.emergencyPhone && (
@@ -55,11 +110,21 @@ function DestinationCard({ d, selected }: { d: ReferralDestination; selected: bo
         </span>
       )}
       <span className="flex flex-wrap gap-1">
-        {d.specialties.slice(0, 6).map((s) => (
-          <Badge key={s.code} variant="outline" className="font-normal">
-            {s.name}
-          </Badge>
-        ))}
+        {[...d.specialties]
+          .sort((a, b) => Number(b.code === specialty) - Number(a.code === specialty))
+          .slice(0, 6)
+          .map((s) => (
+            <Badge
+              key={s.code}
+              variant="outline"
+              className={cn(
+                'font-normal',
+                s.code === specialty && 'border-primary text-primary font-medium',
+              )}
+            >
+              {s.name}
+            </Badge>
+          ))}
       </span>
     </span>
   );
@@ -91,6 +156,8 @@ interface Props {
   destinations: ReferralDestination[];
   escorts: StaffOption[];
   transport: TransportOptions;
+  /** Bệnh viện chọn sẵn (VD cơ sở được đề xuất khi ca bị đề nghị chuyển) */
+  initialTo?: string;
 }
 
 /** Lệnh chuyển tuyến khẩn cấp: chọn bệnh viện, mức độ, xử trí sơ cứu, phương tiện & thời gian dự kiến tới. */
@@ -101,13 +168,20 @@ export function ReferralForm({
   destinations,
   escorts,
   transport,
+  initialTo,
 }: Props) {
   const router = useRouter();
   const form = useForm<ReferralFormValues>({
     resolver: zodResolver(referralFormSchema),
     defaultValues: {
       sourceRecordId: recordId,
-      toFacilityId: destinations.find((d) => d.sameProvince)?.id ?? '',
+      toFacilityId:
+        (
+          destinations.find((d) => d.id === initialTo) ??
+          destinations.find((d) => d.recommended) ??
+          destinations[0]
+        )?.id ?? '',
+      requiredSpecialtyCode: '',
       priority: defaults.priority,
       reason: defaults.reason,
       clinicalSummary: defaults.clinicalSummary,
@@ -119,18 +193,50 @@ export function ReferralForm({
     },
   });
   const { register, handleSubmit, formState, control, setValue } = form;
-  const [toFacilityId, priority] = useWatch({ control, name: ['toFacilityId', 'priority'] });
+  const [toFacilityId, priority, specialty] = useWatch({
+    control,
+    name: ['toFacilityId', 'priority', 'requiredSpecialtyCode'],
+  });
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [list, setList] = useState(destinations);
+  const [ranking, setRanking] = useState(false);
+  // Người dùng đã tự chọn bệnh viện → không tự đổi theo gợi ý nữa
+  const [picked, setPicked] = useState(!!initialTo);
+  const pickedRef = useRef(!!initialTo);
+  useEffect(() => {
+    pickedRef.current = picked;
+  }, [picked]);
+  const first = useRef(true);
   const err = formState.errors;
-  const target = destinations.find((d) => d.id === toFacilityId);
-  const groups = [
-    { title: 'Trong tỉnh', items: destinations.filter((d) => d.sameProvince) },
-    {
-      title: 'Liên tỉnh — ca vượt khả năng chuyên môn tuyến tỉnh',
-      items: destinations.filter((d) => !d.sameProvince),
-    },
-  ];
+  const target = list.find((d) => d.id === toFacilityId);
+  const specialtyOptions = [
+    ...new Map(destinations.flatMap((d) => d.specialties).map((s) => [s.code, s])).values(),
+  ].sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+
+  // Đổi mức độ / chuyên khoa cần → xếp hạng lại bệnh viện (Task B)
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      setRanking(true);
+      void rankDestinations(priority, specialty).then((ranked) => {
+        if (cancelled) return;
+        setRanking(false);
+        if (!ranked) return;
+        setList(ranked);
+        const best = ranked.find((d) => d.recommended) ?? ranked[0];
+        if (!pickedRef.current && best) setValue('toFacilityId', best.id);
+      });
+    }, 0);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [priority, specialty, setValue]);
 
   const onSubmit = handleSubmit((values) =>
     startTransition(async () => {
@@ -151,38 +257,69 @@ export function ReferralForm({
         <CardHeader>
           <CardTitle>Bệnh viện tuyến trên</CardTitle>
           <CardDescription>
-            Ưu tiên bệnh viện có bác sĩ đang trực — họ nhận cảnh báo ngay khi bạn gửi lệnh.
+            Xếp theo mức phù hợp cho ca {referralPriority[priority].label.toLowerCase()}: chuyên
+            khoa cần, giường trống, thời gian di chuyển, bác sĩ đang trực. Bệnh viện quá tải vẫn
+            chọn được — ca cấp cứu không bị từ chối.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          {groups.map(
-            (g) =>
-              g.items.length > 0 && (
-                <fieldset key={g.title} className="flex flex-col gap-2">
-                  <legend className="text-muted-foreground mb-2 text-sm font-medium">
-                    {g.title}
-                  </legend>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {g.items.map((d) => (
-                      <label key={d.id} className="cursor-pointer">
-                        <input
-                          type="radio"
-                          value={d.id}
-                          className="sr-only"
-                          {...register('toFacilityId')}
-                        />
-                        <DestinationCard d={d} selected={toFacilityId === d.id} />
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              ),
-          )}
-          {destinations.length === 0 && (
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="requiredSpecialtyCode">Chuyên khoa cần ở tuyến trên</Label>
+              <NativeSelect
+                id="requiredSpecialtyCode"
+                className="w-64"
+                {...register('requiredSpecialtyCode')}
+              >
+                <option value="">— Không chỉ định —</option>
+                {specialtyOptions.map((s) => (
+                  <option key={s.code} value={s.code}>
+                    {s.name}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+            {ranking && (
+              <span className="text-muted-foreground mb-2 flex items-center gap-1.5 text-xs">
+                <Loader2 className="size-3.5 animate-spin" aria-hidden /> Đang xếp hạng lại…
+              </span>
+            )}
+          </div>
+          <div
+            className="grid gap-3 md:grid-cols-2"
+            role="radiogroup"
+            aria-label="Bệnh viện tuyến trên"
+          >
+            {list.map((d) => (
+              <label key={d.id} className="cursor-pointer">
+                <input
+                  type="radio"
+                  value={d.id}
+                  className="sr-only"
+                  {...register('toFacilityId', { onChange: () => setPicked(true) })}
+                />
+                <DestinationCard d={d} selected={toFacilityId === d.id} specialty={specialty} />
+              </label>
+            ))}
+          </div>
+          {list.length === 0 && (
             <p className="text-muted-foreground text-sm">
               Không có bệnh viện nào nhận chuyển tuyến.
             </p>
           )}
+          {target &&
+            (target.load === 'RED' || target.warnings.some((w) => w.startsWith('Không có'))) && (
+              <p
+                role="alert"
+                className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-500/10 dark:text-amber-100"
+              >
+                {target.name}: {target.warnings.filter((w) => !/trực tuyến/.test(w)).join(', ')}.
+                Bệnh viện vẫn phải tiếp nhận và ổn định ca cấp cứu
+                {list.find((d) => d.recommended && d.id !== target.id)
+                  ? ` — cân nhắc gợi ý ${list.find((d) => d.recommended)!.name}.`
+                  : '.'}
+              </p>
+            )}
           {err.toFacilityId && (
             <p className="text-destructive text-xs">{err.toFacilityId.message}</p>
           )}

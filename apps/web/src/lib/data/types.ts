@@ -306,11 +306,78 @@ export interface ReferralFacility {
   commune: { fullName: string; province: { code: string; fullName: string } };
 }
 
+export type LoadLevelValue = 'GREEN' | 'YELLOW' | 'RED' | 'UNKNOWN';
+
 export interface ReferralDestination extends ReferralFacility {
   level: 'PRIMARY' | 'BASIC' | 'SPECIALIZED';
   specialties: { code: string; name: string }[];
   sameProvince: boolean;
   onDutyCount: number;
+  /** Năng lực tiếp nhận & gợi ý (Task B) */
+  erBedsTotal: number | null;
+  erBedsAvailable: number | null;
+  icuBedsAvailable: number | null;
+  capacityNote: string | null;
+  capacityUpdatedAt: string | null;
+  load: LoadLevelValue;
+  capacityStale: boolean;
+  distanceKm: number | null;
+  travelMinutes: number | null;
+  score: number;
+  reasons: string[];
+  warnings: string[];
+  recommended: boolean;
+}
+
+export interface FacilityCapacity {
+  id: string;
+  name: string;
+  erBedsTotal: number | null;
+  erBedsAvailable: number | null;
+  icuBedsAvailable: number | null;
+  capacityNote: string | null;
+  capacityUpdatedAt: string | null;
+  acceptsReferrals: boolean;
+  load: LoadLevelValue;
+  capacityStale: boolean;
+}
+
+export interface CoordinationOverview {
+  hospitals: (FacilityCapacity & {
+    emergencyPhone: string | null;
+    phone: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    province: string;
+    onDutyCount: number;
+    activeIncoming: number;
+  })[];
+  waiting: {
+    id: string;
+    code: string;
+    priority: ReferralPriorityValue;
+    createdAt: string;
+    escalationLevel: number;
+    waitedMinutes: number;
+    reason: string;
+    fromFacility: { name: string; emergencyPhone: string | null; phone: string | null };
+    toFacility: { name: string; emergencyPhone: string | null; phone: string | null };
+  }[];
+  vehicles: {
+    id: string;
+    plateNumber: string;
+    type: VehicleTypeValue;
+    lastLatitude: number | null;
+    lastLongitude: number | null;
+    lastSeenAt: string | null;
+    facility: { name: string };
+    mission: {
+      code: string;
+      priority: ReferralPriorityValue;
+      toFacility: { name: string };
+      estimatedArrivalAt: string | null;
+    } | null;
+  }[];
 }
 
 export interface StaffOption {
@@ -343,6 +410,13 @@ export interface Referral {
   latestVital: VitalLog | null;
   transportMode: TransportModeValue | null;
   transportNote: string | null;
+  acceptanceType: 'READY' | 'STABILIZE_FORWARD' | null;
+  forwardNote: string | null;
+  redirectCategory: RedirectCategoryValue | null;
+  redirectFacility: { id: string; name: string } | null;
+  requiredSpecialty: { code: string; name: string } | null;
+  escalationLevel: number;
+  escalatedAt: string | null;
   pickupRequestedAt: string | null;
   pickupAssignedAt: string | null;
   pickedUpAt: string | null;
@@ -436,6 +510,9 @@ export interface IncomingReferralAlert {
   diagnosis: { icdCode: string; name: string } | null;
   fromFacility: { name: string; province: string };
   referredBy: string | null;
+  /** Nhắc lại do chậm phản hồi (Task B): mức leo thang */
+  escalated?: number;
+  waitedMinutes?: number;
 }
 
 export type ConsciousnessValue = 'ALERT' | 'VOICE' | 'PAIN' | 'UNRESPONSIVE';
@@ -490,6 +567,23 @@ export interface ReferralUpdatedEvent {
   transportMode: TransportModeValue | null;
   vehicle: { plateNumber: string; type: VehicleTypeValue; facility: string } | null;
   estimatedArrivalAt: string | null;
+  acceptanceType: 'READY' | 'STABILIZE_FORWARD' | null;
+  forwardNote: string | null;
+  redirectFacility: { id: string; name: string } | null;
+}
+
+export type RedirectCategoryValue = 'NO_SPECIALTY' | 'NO_EQUIPMENT' | 'NOT_INDICATED' | 'OTHER';
+
+/** Sự kiện realtime `referral_escalated` (Task B) */
+export interface ReferralEscalatedEvent {
+  id: string;
+  code: string;
+  priority: ReferralPriorityValue;
+  level: number;
+  waitedMinutes: number;
+  fromFacility: string;
+  toFacility: string;
+  toFacilityPhone: string | null;
 }
 
 /** Thống kê toàn hệ thống (Task 5.2) */

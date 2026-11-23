@@ -11,6 +11,7 @@ export function ReferralLiveRefresh({ vitals = false }: { vitals?: boolean }) {
   useRealtimeEvent('referral_updated', () => router.refresh());
   useRealtimeEvent('pickup_request', () => router.refresh());
   useRealtimeEvent('pickup_closed', () => router.refresh());
+  useRealtimeEvent('referral_escalated', () => router.refresh());
   // Bảng điều phối: thẻ ca hiện chỉ số mới nhất trên xe
   useRealtimeEvent('vital_update', () => {
     if (vitals) router.refresh();

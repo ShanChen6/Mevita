@@ -8,16 +8,20 @@ import { TestSignalButton } from '@/components/realtime/test-signal-button';
 import { IncomingReferralCard } from '@/components/referrals/incoming-referral-card';
 import { ReferralLiveRefresh } from '@/components/referrals/referral-live-refresh';
 import { PickupRequestsSection } from '@/components/vehicles/pickup-requests-section';
+import { CapacityCard } from '@/components/coordination/capacity-card';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
-import { listReferrals } from '@/lib/data/referrals';
+import { getCapacity, listReferrals } from '@/lib/data/referrals';
 
 async function Incoming() {
   await connection();
   const now = new Date().toISOString();
-  const active = await listReferrals('incoming', true);
+  const [active, capacity] = await Promise.all([listReferrals('incoming', true), getCapacity()]);
   return (
     <>
+      {capacity.acceptsReferrals && (
+        <CapacityCard key={capacity.capacityUpdatedAt ?? 'none'} capacity={capacity} />
+      )}
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           label="Chờ tiếp nhận"

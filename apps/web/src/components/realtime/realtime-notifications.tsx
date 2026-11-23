@@ -4,7 +4,11 @@ import { useRouter } from 'next/navigation';
 import { toast, Toaster } from 'sonner';
 
 import { playAlert } from '@/lib/alert-sound';
-import type { ReferralPriorityValue, ReferralUpdatedEvent } from '@/lib/data/types';
+import type {
+  ReferralEscalatedEvent,
+  ReferralPriorityValue,
+  ReferralUpdatedEvent,
+} from '@/lib/data/types';
 import { referralPriority } from '@/lib/labels';
 import { formatTime } from '@/lib/format';
 import { IncomingAlertDialog } from './incoming-alert-dialog';
@@ -23,7 +27,13 @@ export function RealtimeNotifications({ offset = 72 }: { offset?: number }) {
     const id = `update-${e.id}-${e.action}`;
     if (e.side === 'outgoing') {
       // Phản hồi của bệnh viện nhận cho tuyến dưới / người đi kèm
-      if (e.action === 'accept')
+      if (e.action === 'accept' && e.acceptanceType === 'STABILIZE_FORWARD')
+        toast.warning(`${e.toFacility} tiếp nhận ca ${e.code} để ổn định rồi chuyển tiếp`, {
+          id,
+          duration: 30_000,
+          description: e.forwardNote ?? undefined,
+        });
+      else if (e.action === 'accept')
         toast.success(`${e.toFacility} đã tiếp nhận ca ${e.code} — ê-kíp sẵn sàng`, {
           id,
           duration: 20_000,
@@ -53,18 +63,20 @@ export function RealtimeNotifications({ offset = 72 }: { offset?: number }) {
           description: e.preparationNote,
         });
       else if (e.action === 'reject')
-        toast.error(`${e.toFacility} không thể tiếp nhận ca ${e.code}`, {
+        toast.error(`${e.toFacility} đề nghị chuyển ca ${e.code} sang cơ sở khác`, {
           id,
           duration: Infinity,
-          description: `${e.rejectionReason ?? ''} — hãy chuyển tới bệnh viện khác.`,
+          description: `${e.rejectionReason ?? ''}${e.redirectFacility ? ` — đề xuất: ${e.redirectFacility.name}` : ''}`,
           action: {
-            label: 'Chuyển nơi khác',
+            label: e.redirectFacility ? `Chuyển tới ${e.redirectFacility.name}` : 'Chuyển nơi khác',
             onClick: () => {
               // Đọc lúc bấm (không dùng usePathname để khung giao diện vẫn dựng sẵn được)
               const portal = window.location.pathname.startsWith('/province')
                 ? 'province'
                 : 'commune';
-              router.push(`/${portal}/referrals/new?record=${e.sourceRecordId}`);
+              router.push(
+                `/${portal}/referrals/new?record=${e.sourceRecordId}${e.redirectFacility ? `&to=${e.redirectFacility.id}` : ''}`,
+              );
             },
           },
         });
@@ -131,6 +143,26 @@ export function RealtimeNotifications({ offset = 72 }: { offset?: number }) {
       });
     },
   );
+
+  // Leo thang khi bệnh viện chậm phản hồi (Task B): tuyến dưới và điều phối viên Sở Y tế
+  useRealtimeEvent<ReferralEscalatedEvent>('referral_escalated', (e) => {
+    const toAdmin = window.location.pathname.startsWith('/admin');
+    toast.error(
+      toAdmin
+        ? `Ca ${e.code} (${referralPriority[e.priority].label}) chưa được phản hồi ${e.waitedMinutes} phút — cần điều phối`
+        : `${e.toFacility} chưa phản hồi ca ${e.code} sau ${e.waitedMinutes} phút`,
+      {
+        id: `escalate-${e.id}`,
+        duration: Infinity,
+        description: toAdmin
+          ? `${e.fromFacility} → ${e.toFacility}${e.toFacilityPhone ? ` · đường dây nóng ${e.toFacilityPhone}` : ''}`
+          : `${e.level >= 2 ? 'Đã báo điều phối viên Sở Y tế. ' : 'Hệ thống đã nhắc lại kíp trực. '}Gọi ngay ${e.toFacilityPhone ?? 'đường dây nóng của bệnh viện'}.`,
+        action: toAdmin
+          ? { label: 'Mở điều phối', onClick: () => router.push('/admin/coordination') }
+          : undefined,
+      },
+    );
+  });
 
   useRealtimeEvent<ChannelTest>('channel_test', (e) => {
     const who = e.from.academicTitle

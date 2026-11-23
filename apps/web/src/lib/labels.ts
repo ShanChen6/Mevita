@@ -188,3 +188,29 @@ export const transportMode: Record<
   FAMILY: 'Gia đình tự túc',
   OTHER: 'Phương tiện khác',
 };
+
+export const loadLevel: Record<'GREEN' | 'YELLOW' | 'RED' | 'UNKNOWN', Display> = {
+  GREEN: {
+    label: 'Bình thường',
+    className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300',
+  },
+  YELLOW: {
+    label: 'Đông',
+    className: 'bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200',
+  },
+  RED: {
+    label: 'Quá tải',
+    className: 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300',
+  },
+  UNKNOWN: { label: 'Chưa cập nhật', className: 'bg-muted text-muted-foreground' },
+};
+
+export const redirectCategory: Record<
+  'NO_SPECIALTY' | 'NO_EQUIPMENT' | 'NOT_INDICATED' | 'OTHER',
+  string
+> = {
+  NO_SPECIALTY: 'Không có chuyên khoa phù hợp',
+  NO_EQUIPMENT: 'Không có thiết bị / kỹ thuật cần thiết',
+  NOT_INDICATED: 'Chưa có chỉ định điều trị ở tuyến này',
+  OTHER: 'Lý do chuyên môn khác',
+};

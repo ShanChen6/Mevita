@@ -21,6 +21,8 @@ export const envSchema = z.object({
   API_PUBLIC_URL: z.string().url().default('http://localhost:4000/api'),
   /** Thư mục lưu ảnh ở chế độ giả lập Cloudinary */
   MEDIA_MOCK_DIR: z.string().default('.uploads'),
+  /** Chu kỳ quét leo thang ca chậm phản hồi (ms); 0 = tắt */
+  ESCALATION_INTERVAL_MS: z.coerce.number().int().min(0).default(30_000),
   CLOUDINARY_CLOUD_NAME: optionalString,
   CLOUDINARY_API_KEY: optionalString,
   CLOUDINARY_API_SECRET: optionalString,
