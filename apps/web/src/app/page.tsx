@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Ambulance, CalendarCheck, FileHeart } from 'lucide-react';
 
+import { LogoMark } from '@/components/brand/logo-mark';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -29,7 +30,10 @@ export default function HomePage() {
         <span className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-medium">
           Đang phát triển
         </span>
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Mevita</h1>
+        <h1 className="flex items-center gap-3 text-4xl font-bold tracking-tight sm:text-5xl">
+          <LogoMark className="h-11 sm:h-14" priority />
+          Mevita
+        </h1>
         <p className="text-muted-foreground max-w-2xl text-lg">
           Hệ thống Quản lý Hồ sơ Y tế Điện tử, Đặt lịch khám &amp; Chuyển tuyến Thời gian thực từ
           Trạm y tế xã lên Bệnh viện tỉnh/liên tỉnh.

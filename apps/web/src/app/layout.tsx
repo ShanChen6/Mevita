@@ -19,6 +19,9 @@ export const metadata: Metadata = {
     template: '%s · Mevita',
   },
   description: 'Hệ thống Quản lý Hồ sơ Y tế Điện tử, Đặt lịch khám & Chuyển tuyến Thời gian thực.',
+  applicationName: 'Mevita',
+  // icon.png, apple-icon.png, favicon.ico trong app/ được Next tự gắn thẻ <link>
+  openGraph: { title: 'Mevita', images: ['/brand/logo.png'] },
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

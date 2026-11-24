@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { HeartPulse } from 'lucide-react';
 
+import { LogoMark } from '@/components/brand/logo-mark';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
@@ -16,10 +16,11 @@ export function AuthCard({ title, description, wide, footer, children }: AuthCar
   return (
     <main className="bg-muted/40 flex min-h-svh items-center justify-center px-4 py-10">
       <div className={cn('flex w-full flex-col gap-6', wide ? 'max-w-xl' : 'max-w-sm')}>
-        <Link href="/" className="flex items-center justify-center gap-2 font-bold">
-          <span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">
-            <HeartPulse className="size-4" aria-hidden />
-          </span>
+        <Link
+          href="/"
+          className="flex flex-col items-center justify-center gap-1 text-xl font-bold"
+        >
+          <LogoMark className="h-14" priority />
           Mevita
         </Link>
         <Card>

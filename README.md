@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/assets/logo.png" alt="Mevita" width="180"></p>
+
 # Mevita
 
 Hệ thống Quản lý Hồ sơ Y tế Điện tử, Đặt lịch khám & Chuyển tuyến Thời gian thực.
